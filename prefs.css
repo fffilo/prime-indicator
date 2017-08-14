@@ -1,0 +1,7 @@
+PrimeIndicatorPrefsBox { border: none; padding: 0.5em; }
+PrimeIndicatorPrefsBox GtkButton { padding: 0.3em 2.41em; }
+
+.prime-indicator-prefs-page { padding: 2em; }
+.prime-indicator-prefs-page-about-title { padding-bottom: 2em; font-weight: bold; }
+.prime-indicator-prefs-page-about-description { padding: 2em; }
+.prime-indicator-prefs-page-about-license { font-size: 0.8em; padding-top: 2em; }

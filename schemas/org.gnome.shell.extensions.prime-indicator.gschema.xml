@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="prime-indicator">
+    <schema path="/org/gnome/shell/extensions/prime-indicator/" id="org.gnome.shell.extensions.prime-indicator">
+        <key name="auto-logout" type="b">
+            <default>true</default>
+            <summary>Logout on GPU switch</summary>
+        </key>
+    </schema>
+</schemalist>

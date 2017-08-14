@@ -1,0 +1,112 @@
+#!/bin/bash
+
+# show usage
+function _help {
+    echo "Usage: prime-menu nvidia|intel|query [--logout]"
+    if [ -n "$1" ]; then
+        exit $1
+    fi
+}
+
+# check root privileges
+function _root {
+    if [ $EUID -ne 0 ]; then
+        echo "Error: This script must be run as root"
+        exit 1
+    fi
+}
+
+# check prime-select installation
+function _installed {
+    if [ -z `_which` ]; then
+        echo "Error: command prime-select not found"
+        exit 1
+    fi
+}
+
+# get prime-select command path
+function _which {
+    which prime-select
+}
+
+# get display manager service path
+function _dm {
+    CMD=
+    if [ -z "$CMD" ]; then CMD=`cat /etc/X11/default-display-manager 2> /dev/null`; fi
+    if [ -z "$CMD" ]; then CMD=`cat /etc/sysconfig/displaymanager 2> /dev/null`; fi
+    if [ -z "$CMD" ]; then CMD=`cat /etc/sysconfig/desktop 2> /dev/null`; fi
+    if [ -n "$CMD" ]; then echo $CMD; fi
+}
+
+# prime query
+function _query {
+    _installed
+    `_which` query
+}
+
+# select intel gpu
+function _intel {
+    _installed
+    _root
+    `_which` intel
+}
+
+# select nvidia gpu
+function _nvidia {
+    _installed
+    _root
+    `_which` nvidia
+}
+
+# restart display manager
+function _restart {
+    CMD=`_dm`
+    if [ -z "$CMD" ]; then
+        echo "Warning: can't detect display manager"
+        exit 0
+    fi
+
+    _root
+    CMD="${CMD##*/}"
+    service $CMD restart
+}
+
+# what to do
+_DO_HELP=
+_DO_QUERY=
+_DO_INTEL=
+_DO_NVIDIA=
+_DO_LOGOUT=
+
+# iterate arguments
+for ARG in "$@"
+do
+    if [ "$ARG" == "--help" ]; then
+        _DO_HELP=1
+    elif [ "$ARG" == "--logout" ]; then
+        _DO_LOGOUT=1
+    elif [ "$ARG" == "query" ]; then
+        _DO_QUERY=1
+    elif [ "$ARG" == "intel" ]; then
+        _DO_INTEL=1
+    elif [ "$ARG" == "nvidia" ]; then
+        _DO_NVIDIA=1
+    else
+        _help 1
+    fi
+done
+
+# execute
+if [ -n "${_DO_HELP}" ]; then
+    _help
+elif [[ -n "${_DO_QUERY}" && -z "${_DO_INTEL}" && -z "${_DO_NVIDIA}" ]]; then
+    _query
+elif [[ -z "${_DO_QUERY}" && -n "${_DO_INTEL}" && -z "${_DO_NVIDIA}" ]]; then
+    _intel
+    [ -n "${_DO_LOGOUT}" ] && _restart
+elif [[ -z "${_DO_QUERY}" && -z "${_DO_INTEL}" && -n "${_DO_NVIDIA}" ]]; then
+    _nvidia
+    [ -n "${_DO_LOGOUT}" ] && _restart
+else
+    _help 1
+fi
