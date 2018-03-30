@@ -110,9 +110,9 @@ const Widget = new GObject.Class({
         box.actor.add(input);
         page.actor.add(box);
 
-        let box = new Box();
-        let label = new Gtk.Label({ label: _("NVIDIA Settings"), xalign: 0, tooltip_text: '' });
-        let input = new Gtk.Button({ label: _("Open"), expand: false });
+        box = new Box();
+        label = new Gtk.Label({ label: _("NVIDIA Settings"), xalign: 0, tooltip_text: '' });
+        input = new Gtk.Button({ label: _("Open"), expand: false });
         input.set_sensitive(this._which('nvidia-settings'));
         input.connect('clicked', Lang.bind(this, this._handle_nvidia_settings));
         box.actor.set_orientation(Gtk.Orientation.HORIZONTAL);
@@ -132,7 +132,7 @@ const Widget = new GObject.Class({
         let page = this._page();
         page.get_style_context().add_class('prime-indicator-prefs-page-about');
 
-        item = new Label({ label: Me.metadata.name, });
+        let item = new Label({ label: Me.metadata.name, });
         item.get_style_context().add_class('prime-indicator-prefs-page-about-title');
         page.actor.add(item);
 
@@ -141,7 +141,7 @@ const Widget = new GObject.Class({
         item.get_style_context().add_class('prime-indicator-prefs-page-about-icon');
         page.actor.add(item);
 
-        let item = new Label({ label: Me.metadata['description-html'] || Me.metadata.description, });
+        item = new Label({ label: Me.metadata['description-html'] || Me.metadata.description, });
         item.get_style_context().add_class('prime-indicator-prefs-page-about-description');
         page.actor.add(item);
 
@@ -305,4 +305,3 @@ const Label = new GObject.Class({
     /* --- */
 
 });
-
