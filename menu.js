@@ -58,6 +58,10 @@ const Widget = new Lang.Class({
         let items = Main.panel.statusArea.aggregateMenu.menu._getMenuItems();
         Main.panel.statusArea.aggregateMenu.menu.addMenuItem(this, items.length - 1);
 
+        if (!this.switch.commands.sudo) this._log('can\'t find sudo frontend command, switch disabled');
+        if (!this.switch.commands.prime) this._log('can\'t find prime-select command, query/switch disabled');
+        if (!this.switch.commands.settings) this._log('can\'t find nvidia-settings command, settings disabled');
+
         this._refresh();
     },
 
@@ -70,6 +74,19 @@ const Widget = new Lang.Class({
         this.switch.destroy();
         this.settings.run_dispose();
         this.parent();
+    },
+
+    /**
+     * Proxy for global.log()
+     *
+     * @param  {String} message
+     * @return {Void}
+     */
+    _log: function(message) {
+        let args = ['PrimeIndicator.Menu.Widget'];
+        args.push.apply(args, arguments);
+
+        global.log.apply(global, args);
     },
 
     /**
@@ -88,7 +105,7 @@ const Widget = new Lang.Class({
         this.ui.intel.setOrnament(query === 'intel' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
         this.ui.nvidia.setSensitive(commands.sudo && commands.prime);
         this.ui.nvidia.setOrnament(query === 'nvidia' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
-        this.ui.message.actor.visible = gpu !== query && commands.prime && commands.glxinfo;
+        this.ui.message.actor.visible = gpu !== 'undefined' && gpu !== query && commands.prime && commands.gpu;
     },
 
     /**
@@ -114,7 +131,12 @@ const Widget = new Lang.Class({
         if (actor._ornament !== PopupMenu.Ornament.NONE)
             return;
 
-        this.switch.switch(gpu, this.settings.get_boolean('auto-logout'));
+        //this.switch.switch(gpu, this.settings.get_boolean('auto-logout'));
+
+        let logout = this.settings.get_boolean('auto-logout');
+        this.switch.switch(gpu, function(e) {
+            global.log("Prime!", "_handle_menu_item_click", gpu, this, JSON.stringify(e));
+        });
     },
 
     /**

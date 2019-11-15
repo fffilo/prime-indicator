@@ -12,13 +12,6 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 
 /**
- * Path of prime status file
- *
- * @type {String}
- */
-const INDEX = '/etc/prime-discrete';
-
-/**
  * Switch constructor:
  * prime profiles manipulation
  *
@@ -30,15 +23,26 @@ const Switch = new Lang.Class({
     Name: 'PrimeIndicator.Prime.Switch',
 
     /**
+     * File with prime status
+     *
+     * @type {String}
+     */
+    INDEX: '/etc/prime-discrete',
+
+    /**
      * Constructor
      *
      * @return {Void}
      */
     _init: function() {
-        this.listener = null;
-        this.commands = null;
+        this.commands = {
+            sudo: this._which('pkexec') || this._which('gksudo'),
+            gpu: this._which('gpu'),
+            prime: this._which('prime-select'),
+            settings: this._which('nvidia-settings'),
+        }
 
-        this._commands();
+        this.listener = null;
     },
 
     /**
@@ -48,27 +52,6 @@ const Switch = new Lang.Class({
      */
     destroy: function() {
         this.unmonitor();
-    },
-
-    /**
-     * Get shell commands
-     *
-     * @return {Void}
-     */
-    _commands: function() {
-        this.commands = {
-            sudo: this._which('pkexec') || this._which('gksudo'),
-            bash: this._which('bash'),
-            glxinfo: this._which('glxinfo'),
-            prime: this._which('prime-select'),
-            settings: this._which('nvidia-settings'),
-            switch: Me.path + '/prime-proxy',
-        }
-
-        if (!this.commands.sudo) this._log('can\'t find sudo frontend command, switch disabled');
-        if (!this.commands.glxinfo) this._log('can\'t find glxinfo command, gpu disabled');
-        if (!this.commands.prime) this._log('can\'t find prime-select command, query/switch disabled');
-        if (!this.commands.settings) this._log('can\'t find nvidia-settings command, settings disabled');
     },
 
     /**
@@ -91,9 +74,39 @@ const Switch = new Lang.Class({
      * @return {Mixed}
      */
     _which: function(command) {
-        let result = this._shell_exec('which ' + command);
-        if (result)
-            result = result.trim();
+        let exec = this._shell_exec('which ' + command);
+        return exec.stdout.trim() || exec.stderr.trim();
+    },
+
+    /**
+     * Shell execute command
+     *
+     * @param  {String} command
+     * @return {Object}
+     */
+    _shell_exec: function(command) {
+        let result = {
+            status: -1,
+            stdin: command,
+            stdout: '',
+            stderr: '',
+        }
+
+        try {
+            let subprocess = new Gio.Subprocess({
+                argv: command.split(' '),
+                flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
+            });
+            subprocess.init(null);
+
+            let [, stdout, stderr] = subprocess.communicate_utf8(null, null);
+            result.status = subprocess.get_exit_status();;
+            result.stdout = stdout;
+            result.stderr = stderr;
+        }
+        catch(e) {
+            result.stderr = e.toString();
+        }
 
         return result;
     },
@@ -101,39 +114,29 @@ const Switch = new Lang.Class({
     /**
      * Shell execute command
      *
-     * @param  {String} command
-     * @return {Mixed}
-     */
-    _shell_exec: function(command) {
-        try {
-            let [ok, output, error, status] = GLib.spawn_sync(null, command.split(' '), null, GLib.SpawnFlags.SEARCH_PATH, null);
-            if (ok)
-                return output.toString();
-        }
-        catch(e) {
-            // pass
-        }
-
-        return null;
-    },
-
-    /**
-     * Shell execute command
-     *
-     * @param  {String} command
+     * @param  {String}   command
+     * @param  {Function} callback (optional)
      * @return {Void}
      */
-    _shell_exec_async: function(command) {
+    _shell_exec_async: function(command, callback) {
         try {
-            let [ok, pid] = GLib.spawn_async(null, command.split(' '), null, GLib.SpawnFlags.SEARCH_PATH, null);
-            if (ok)
-                return pid;
+            let subprocess = new Gio.Subprocess({
+                argv: command.split(' '),
+                flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
+            });
+
+            subprocess.init(null);
+            subprocess.communicate_utf8_async(null, null, Lang.bind(this, this._handle_async_shell_exec, command, callback));
         }
         catch(e) {
-            // pass
+            if (typeof callback === 'function')
+                callback.call(this, {
+                    status: -1,
+                    stdin: command,
+                    stdout: '',
+                    stderr: e.toString(),
+                });
         }
-
-        return null;
     },
 
     /**
@@ -154,12 +157,13 @@ const Switch = new Lang.Class({
      * @return {String}
      */
     get gpu() {
-        if (this.commands.glxinfo) {
-            let result = this._shell_exec(this.commands.glxinfo);
+        if (this.commands.gpu) {
+            let exec = this._shell_exec(this.commands.gpu);
+            let output = exec.stdout.trim() || exec.stderr.trim();
 
-            if (this._regex_match('OpenGL vendor string:.*Intel', result))
+            if (this._regex_match('OpenGL vendor string:.*Intel', output))
                 return 'intel';
-            if (this._regex_match('OpenGL vendor string:.*NVIDIA', result))
+            if (this._regex_match('OpenGL vendor string:.*NVIDIA', output))
                 return 'nvidia';
         }
 
@@ -174,10 +178,8 @@ const Switch = new Lang.Class({
      */
     get query() {
         if (this.commands.prime) {
-            let result = this._shell_exec(this.commands.prime + ' query');
-
-            if (result)
-                return result.trim();
+            let exec = this._shell_exec(this.commands.prime + ' query');
+            return exec.stdout.trim() || exec.stderr.trim() || 'unknown';
         }
 
         return 'unknown';
@@ -186,24 +188,20 @@ const Switch = new Lang.Class({
     /**
      * GPU switch
      *
-     * @param  {String}  gpu    intel|nvidia
-     * @param  {Boolean} logout (optional)
+     * @param  {String}   gpu    intel|nvidia
+     * @param  {Function} logout (optional)
      * @return {Void}
      */
-    switch: function(gpu, logout) {
-        if (!this.commands.sudo || !this.commands.prime)
-            return;
+    switch: function(gpu, callback) {
         if (this.query === gpu)
             return;
 
         let command = this.commands.sudo
-             + ' ' + this.commands.bash
-             + ' ' + this.commands.switch
+             + ' ' + this.commands.prime
              + ' ' + gpu
-             + (logout ? ' --logout' : '');
 
         this._log('switching to ' + gpu);
-        this._shell_exec_async(command);
+        this._shell_exec_async(command, callback);
     },
 
     /**
@@ -227,7 +225,7 @@ const Switch = new Lang.Class({
         if (this.listener)
             return;
 
-        this.listener = Gio.File.new_for_path(INDEX).monitor_file(Gio.FileMonitorFlags.NONE, null);
+        this.listener = Gio.File.new_for_path(this.INDEX).monitor_file(Gio.FileMonitorFlags.NONE, null);
         this.listener.connect('changed', Lang.bind(this, this._handle_listener));
     },
 
@@ -254,6 +252,28 @@ const Switch = new Lang.Class({
      */
     _handle_listener: function(file, otherFile, eventType) {
         this.emit('gpu-change', this.gpu);
+    },
+
+    /**
+     * Async shell exec event handler
+     *
+     * @param  {Gio.Subprocess} source
+     * @param  {Gio.Task}       resource
+     * @param  {String}         stdin
+     * @param  {Function}       callback (optional)
+     * @return {Void}
+     */
+    _handle_async_shell_exec: function(source, resource, stdin, callback) {
+        let status = source.get_exit_status();
+        let [, stdout, stderr] = source.communicate_utf8_finish(resource);
+
+        if (typeof callback === 'function')
+            callback.call(this, {
+                status: status,
+                stdin: stdin,
+                stdout: stdout,
+                stderr: stderr,
+            });
     },
 
     /* --- */
