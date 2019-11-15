@@ -6,7 +6,6 @@
 // import modules
 const Lang = imports.lang;
 const Gio = imports.gi.Gio;
-const GLib = imports.gi.GLib;
 const Signals = imports.signals;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
@@ -35,14 +34,16 @@ const Switch = new Lang.Class({
      * @return {Void}
      */
     _init: function() {
-        this.commands = {
+        this._commands = null;
+        this._gpu = null;
+        this._listener = null;
+
+        this._commands = {
             sudo: this._which('pkexec') || this._which('gksudo'),
-            gpu: this._which('gpu'),
-            prime: this._which('prime-select'),
+            select: this._which('prime-select'),
+            management: this._which('nvidia-smi -L'),
             settings: this._which('nvidia-settings'),
         }
-
-        this.listener = null;
     },
 
     /**
@@ -140,34 +141,25 @@ const Switch = new Lang.Class({
     },
 
     /**
-     * Simple regex match
-     *
-     * @param  {String}  pattern
-     * @param  {String}  source
-     * @return {Boolean}
-     */
-    _regex_match: function(pattern, source) {
-        return GLib.Regex.match_simple(pattern, source, GLib.RegexCompileFlags.CASELESS, GLib.RegexMatchFlags.NOTEOL);
-    },
-
-    /**
      * Property gpu getter:
-     * current GPU from `glxinfo` shell command
+     * if `nvidia-smi -q` shell command exit code
+     * is non-zero, 'nvidia' is not in use
      *
      * @return {String}
      */
     get gpu() {
-        if (this.commands.gpu) {
-            let exec = this._shell_exec(this.commands.gpu);
-            let output = exec.stdout.trim() || exec.stderr.trim();
+        if (this._gpu)
+            return this._gpu;
 
-            if (this._regex_match('OpenGL vendor string:.*Intel', output))
-                return 'intel';
-            if (this._regex_match('OpenGL vendor string:.*NVIDIA', output))
-                return 'nvidia';
+        let cmd = this.command('management');
+        if (cmd) {
+            let exec = this._shell_exec(cmd);
+            this._gpu = exec.status ? 'intel' : 'nvidia';
         }
+        else
+            this._gpu = 'unknown';
 
-        return 'unknown';
+        return this.gpu;
     },
 
     /**
@@ -177,8 +169,9 @@ const Switch = new Lang.Class({
      * @return {String}
      */
     get query() {
-        if (this.commands.prime) {
-            let exec = this._shell_exec(this.commands.prime + ' query');
+        let cmd = this.command('select');
+        if (cmd) {
+            let exec = this._shell_exec(cmd + ' query');
             return exec.stdout.trim() || exec.stderr.trim() || 'unknown';
         }
 
@@ -186,22 +179,45 @@ const Switch = new Lang.Class({
     },
 
     /**
+     * Get shell command
+     *
+     * @param  {String} cmd sudo|select|management|settings
+     * @return {String}     null on fail
+     */
+    command: function(cmd) {
+        if (cmd in this._commands)
+            return this._commands[cmd];
+
+        return null;
+    },
+
+    /**
      * GPU switch
+     * shell command `prime-select $gpu`, where
+     * gpu is 'intel' or 'nvidia'
      *
      * @param  {String}   gpu    intel|nvidia
      * @param  {Function} logout (optional)
      * @return {Void}
      */
     switch: function(gpu, callback) {
+        let sudo = this.command('sudo');
+        if (!sudo)
+            return;
+
+        let select = this.command('select');
+        if (!select)
+            return;
+
         if (this.query === gpu)
             return;
 
-        let command = this.commands.sudo
-             + ' ' + this.commands.prime
+        let cmd = sudo
+             + ' ' + select
              + ' ' + gpu
 
         this._log('switching to ' + gpu);
-        this._shell_exec_async(command, callback);
+        this._shell_exec_async(cmd, callback);
     },
 
     /**
@@ -210,10 +226,11 @@ const Switch = new Lang.Class({
      * @return {Void}
      */
     settings: function() {
-        if (!this.commands.settings)
+        let cmd = this.command('settings');
+        if (!cmd)
             return;
 
-        this._shell_exec_async(this.commands.settings);
+        this._shell_exec_async(cmd);
     },
 
     /**
@@ -222,11 +239,11 @@ const Switch = new Lang.Class({
      * @return {Void}
      */
     monitor: function() {
-        if (this.listener)
+        if (this._listener)
             return;
 
-        this.listener = Gio.File.new_for_path(this.INDEX).monitor_file(Gio.FileMonitorFlags.NONE, null);
-        this.listener.connect('changed', Lang.bind(this, this._handle_listener));
+        this._listener = Gio.File.new_for_path(this.INDEX).monitor_file(Gio.FileMonitorFlags.NONE, null);
+        this._listener.connect('changed', Lang.bind(this, this._handle_listener));
     },
 
     /**
@@ -235,11 +252,11 @@ const Switch = new Lang.Class({
      * @return {Void}
      */
     unmonitor: function() {
-        if (!this.listener)
+        if (!this._listener)
             return;
 
-        this.listener.cancel();
-        this.listener = null;
+        this._listener.cancel();
+        this._listener = null;
     },
 
     /**

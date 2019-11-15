@@ -58,11 +58,16 @@ const Widget = new Lang.Class({
         let items = Main.panel.statusArea.aggregateMenu.menu._getMenuItems();
         Main.panel.statusArea.aggregateMenu.menu.addMenuItem(this, items.length - 1);
 
-        if (!this.switch.commands.sudo) this._log('can\'t find sudo frontend command, switch disabled');
-        if (!this.switch.commands.prime) this._log('can\'t find prime-select command, query/switch disabled');
-        if (!this.switch.commands.settings) this._log('can\'t find nvidia-settings command, settings disabled');
-
         this._refresh();
+
+        if (!this.switch.command('sudo'))
+            this._log('can\'t find sudo frontend command, switch disabled');
+        if (!this.switch.command('select'))
+            this._log('can\'t find prime-select command, query/switch disabled');
+        if (!this.switch.command('management'))
+            this._log('can\'t find prime-smi command, logout notification disabled');
+        if (!this.switch.command('settings'))
+            this._log('can\'t find nvidia-settings command, settings disabled');
     },
 
     /**
@@ -99,13 +104,14 @@ const Widget = new Lang.Class({
     _refresh: function() {
         let gpu = this.switch.gpu;
         let query = this.switch.query;
-        let commands = this.switch.commands;
+        let sudo = this.switch.command('sudo');
+        let select = this.switch.command('select');
 
-        this.ui.intel.setSensitive(commands.sudo && commands.prime);
+        this.ui.intel.setSensitive(sudo && select);
         this.ui.intel.setOrnament(query === 'intel' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
-        this.ui.nvidia.setSensitive(commands.sudo && commands.prime);
+        this.ui.nvidia.setSensitive(sudo && select);
         this.ui.nvidia.setOrnament(query === 'nvidia' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
-        this.ui.message.actor.visible = gpu !== 'undefined' && gpu !== query && commands.prime && commands.gpu;
+        this.ui.message.actor.visible = gpu !== 'unknown' && gpu !== query && select;
     },
 
     /**
