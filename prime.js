@@ -17,7 +17,7 @@ const Me = ExtensionUtils.getCurrentExtension();
  * @param  {Object}
  * @return {Object}
  */
-const Switch = new Lang.Class({
+var Switch = new Lang.Class({
 
     Name: 'PrimeIndicator.Prime.Switch',
 

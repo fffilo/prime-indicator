@@ -23,7 +23,7 @@ const _ = Translation.translate;
  * @param  {Object}
  * @return {Object}
  */
-const Widget = new Lang.Class({
+var Widget = new Lang.Class({
 
     Name: 'PrimeIndicator.Menu.Widget',
     Extends: PopupMenu.PopupSubMenuMenuItem,
