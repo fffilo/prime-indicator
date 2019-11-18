@@ -8,7 +8,7 @@
     "original-author": "Franjo Filo <fffilo666@gmail.com>",
     "original-author-html": "Franjo Filo &lt;<a href=\"mailto:fffilo666@gmail.com\">fffilo666@gmail.com</a>&gt;",
     "settings-schema": "org.gnome.shell.extensions.prime-indicator",
-    "shell-version": ["3.18"],
+    "shell-version": ["3.18", "3.20", "3.22", "3.24", "3.26", "3.28"],
     "url": "https://github.com/fffilo/prime-indicator",
     "uuid": "prime-indicator@gnome-shell-exstensions.fffilo.github.com",
     "version": "2"
