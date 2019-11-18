@@ -7,6 +7,8 @@
 const Lang = imports.lang;
 const Main = imports.ui.main;
 const PopupMenu = imports.ui.popupMenu;
+const System = Main.panel.statusArea.aggregateMenu._system;
+const GnomeSession = imports.misc.gnomeSession;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Prime = Me.imports.prime;
@@ -82,14 +84,32 @@ const Widget = new Lang.Class({
     },
 
     /**
+     * Logout gnome session
+     *
+     * @return {Void}
+     */
+    logout: function() {
+        let sessionManager = System._session || new GnomeSession.SessionManager();
+        let mode = 1;
+        // 0: Normal.
+        // 1: No confirmation inferface should be shown.
+        // 2: Forcefully logout. No confirmation will be shown and any inhibitors will be ignored.
+
+        this._log('gnome session logout');
+        sessionManager.LogoutRemote(mode);
+    },
+
+    /**
      * Proxy for global.log()
      *
      * @param  {String} message
      * @return {Void}
      */
     _log: function(message) {
-        let args = ['PrimeIndicator.Menu.Widget'];
-        args.push.apply(args, arguments);
+        let args = ['[prime-indicator@gnome-shell-exstensions.fffilo.github.com.Menu.Widget]'];
+        if (arguments.length)
+            args[0] += ': ' + arguments[0];
+        args.push.apply(args, Array.prototype.slice.call(arguments, 1));
 
         global.log.apply(global, args);
     },
@@ -137,12 +157,15 @@ const Widget = new Lang.Class({
         if (actor._ornament !== PopupMenu.Ornament.NONE)
             return;
 
-        //this.switch.switch(gpu, this.settings.get_boolean('auto-logout'));
+        this.switch.switch(gpu, Lang.bind(this, function(e) {
+            if (!this.settings.get_boolean('auto-logout'))
+                return;
+            if (!e.result)
+                return;
 
-        let logout = this.settings.get_boolean('auto-logout');
-        this.switch.switch(gpu, function(e) {
-            global.log("Prime!", "_handle_menu_item_click", gpu, this, JSON.stringify(e));
-        });
+            this._log('logout on gpu switch enabled, logging out')
+            this.logout();
+        }));
     },
 
     /**

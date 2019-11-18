@@ -62,8 +62,10 @@ const Switch = new Lang.Class({
      * @return {Void}
      */
     _log: function(message) {
-        let args = ['PrimeIndicator.Prime.Switch'];
-        args.push.apply(args, arguments);
+        let args = ['[prime-indicator@gnome-shell-exstensions.fffilo.github.com.Prime.Switch]'];
+        if (arguments.length)
+            args[0] += ': ' + arguments[0];
+        args.push.apply(args, Array.prototype.slice.call(arguments, 1));
 
         global.log.apply(global, args);
     },
@@ -217,7 +219,18 @@ const Switch = new Lang.Class({
              + ' ' + gpu
 
         this._log('switching to ' + gpu);
-        this._shell_exec_async(cmd, callback);
+        this._shell_exec_async(cmd, Lang.bind(this, function(e) {
+            if (!e.status)
+                this._log('switched to ' + gpu);
+            else
+                this._log('not switched to ' + gpu + ' (' + e.stderr.trim() + ')');
+
+            if (typeof callback === 'function')
+                callback.call(this, {
+                    gpu: gpu,
+                    result: !e.status,
+                });
+        }));
     },
 
     /**
