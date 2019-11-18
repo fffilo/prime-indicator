@@ -12,6 +12,7 @@ const GnomeSession = imports.misc.gnomeSession;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Prime = Me.imports.prime;
+const Log = Me.imports.log;
 const Settings = Me.imports.settings;
 const Translation = Me.imports.translation;
 const _ = Translation.translate;
@@ -106,12 +107,10 @@ var Widget = new Lang.Class({
      * @return {Void}
      */
     _log: function(message) {
-        let args = ['[prime-indicator@gnome-shell-exstensions.fffilo.github.com.Menu.Widget]'];
-        if (arguments.length)
-            args[0] += ': ' + arguments[0];
-        args.push.apply(args, Array.prototype.slice.call(arguments, 1));
+        let args = Array.prototype.slice.call(arguments);
+        args.unshift('Menu.Widget');
 
-        global.log.apply(global, args);
+        Log.journal.apply(Log.journal, args);
     },
 
     /**

@@ -9,6 +9,7 @@ const Gio = imports.gi.Gio;
 const Signals = imports.signals;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
+const Log = Me.imports.log;
 
 /**
  * Switch constructor:
@@ -62,12 +63,10 @@ var Switch = new Lang.Class({
      * @return {Void}
      */
     _log: function(message) {
-        let args = ['[prime-indicator@gnome-shell-exstensions.fffilo.github.com.Prime.Switch]'];
-        if (arguments.length)
-            args[0] += ': ' + arguments[0];
-        args.push.apply(args, Array.prototype.slice.call(arguments, 1));
+        let args = Array.prototype.slice.call(arguments);
+        args.unshift('Prime.Switch');
 
-        global.log.apply(global, args);
+        Log.journal.apply(Log.journal, args);
     },
 
     /**
