@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 if [[ $# -eq 1 && "$1" == "-L" ]]; then
-    if [ -f "/etc/prime-discrete" ]; then
-        if [[ "`cat /etc/prime-discrete`" == "on" ]]; then
+    if [ -f "/var/tmp/prime-discrete" ]; then
+        if [[ "`cat /var/tmp/prime-discrete`" == "on" ]]; then
             echo "GPU 0: GeForce GTX 1080M (UUID: GPU-00000000-0000-0000-0000-000000000000)"
             exit 0;
         fi

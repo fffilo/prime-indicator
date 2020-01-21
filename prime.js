@@ -42,7 +42,7 @@ var Switch = new Lang.Class({
         this._commands = {
             sudo: this._which('pkexec') || this._which('gksudo'),
             select: this._which('prime-select'),
-            management: this._which('nvidia-smi -L'),
+            management: this._which('nvidia-smi'),
             settings: this._which('nvidia-settings'),
         }
     },
@@ -154,7 +154,7 @@ var Switch = new Lang.Class({
 
         let cmd = this.command('management');
         if (cmd) {
-            let exec = this._shell_exec(cmd);
+            let exec = this._shell_exec(cmd + ' -L');
             this._gpu = exec.status ? 'intel' : 'nvidia';
         }
         else
