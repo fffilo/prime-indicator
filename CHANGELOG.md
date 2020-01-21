@@ -1,6 +1,8 @@
 # Changelog
 
-## [Unreleased]
+## Version 3 - 2020-01-21
+### Changed
+- Gnome shell 3.30 support
 
 ## Version 2 - 2019-11-18
 ### Changed
