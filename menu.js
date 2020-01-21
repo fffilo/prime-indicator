@@ -25,15 +25,15 @@ const _ = Translation.translate;
  * @param  {Object}
  * @return {Object}
  */
-var Widget = class Widget extends PopupMenu.PopupSubMenuMenuItem {
+var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMenuItem {
 
     /**
      * Constructor
      *
      * @return {Void}
      */
-    constructor() {
-        super(_("Prime Select"), true);
+    _init() {
+        super._init(_("Prime Select"), true);
 
         this.settings = Settings.settings();
         this.settings.connect('changed', this._handle_settings.bind(this));
@@ -177,4 +177,4 @@ var Widget = class Widget extends PopupMenu.PopupSubMenuMenuItem {
 
     /* --- */
 
-};
+});
