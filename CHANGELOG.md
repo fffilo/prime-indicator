@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 5 - 2020-01-21
+### Changed
+- Gnome shell 3.34 support
+
 ## Version 4 - 2020-01-21
 ### Changed
 - Gnome shell 3.32 support
