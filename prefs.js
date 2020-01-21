@@ -187,8 +187,12 @@ const Widget = new GObject.Class({
     _shell_exec: function(command) {
         try {
             let [ok, output, error, status] = GLib.spawn_sync(null, command.split(' '), null, GLib.SpawnFlags.SEARCH_PATH, null);
-            if (ok)
-                return output.toString();
+            if (ok) {
+                if (output instanceof Uint8Array)
+                    output = String.fromCharCode.apply(null, output);
+
+                return output.toString().trim();
+            }
         }
         catch(e) {
             // pass
