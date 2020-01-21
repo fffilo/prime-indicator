@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 4 - 2020-01-21
+### Changed
+- Gnome shell 3.32 support
+- Preferences styling
+
 ## Version 3 - 2020-01-21
 ### Changed
 - Gnome shell 3.30 support
