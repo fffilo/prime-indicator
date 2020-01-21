@@ -99,25 +99,13 @@ const Widget = new GObject.Class({
         let page = this._page();
         page.get_style_context().add_class('prime-indicator-prefs-page-settings');
 
-        let value = this.settings.get_boolean('auto-logout');
-        let box = new Box();
-        let label = new Gtk.Label({ label: _("Logout on GPU switch"), xalign: 0, tooltip_text: '' });
-        let input = new Gtk.Switch({ active: value });
-        input.connect('notify::active', this._handle_input_change.bind(this));
-        box.actor.set_orientation(Gtk.Orientation.HORIZONTAL);
-        box.actor.pack_start(label, true, true, 0);
-        box.actor.add(input);
-        page.actor.add(box);
+        let input = new InputSwitch('auto-logout', this.settings.get_boolean('auto-logout'), _("Logout on GPU switch"), _("Logout on GPU switch"));
+        input.connect('changed', this._handle_input_change.bind(this));
+        page.actor.add(input);
 
-        box = new Box();
-        label = new Gtk.Label({ label: _("NVIDIA Settings"), xalign: 0, tooltip_text: '' });
-        input = new Gtk.Button({ label: _("Open"), expand: false });
-        input.set_sensitive(this._which('nvidia-settings'));
-        input.connect('clicked', this._handle_nvidia_settings.bind(this));
-        box.actor.set_orientation(Gtk.Orientation.HORIZONTAL);
-        box.actor.pack_start(label, true, true, 0);
-        box.actor.add(input);
-        page.actor.add(box);
+        input = new InputButton(_("Open"), _("NVIDIA Settings"));
+        input.connect('changed', this._handle_button_change.bind(this));
+        page.actor.add(input);
 
         return page;
     },
@@ -227,7 +215,9 @@ const Widget = new GObject.Class({
      * @return {Void}
      */
     _handle_input_change: function(actor, event) {
-        this.settings.set_boolean('auto-logout', actor.active);
+        let old = this.settings['get_' + event.type](event.key);
+        if (old != event.value)
+            this.settings['set_' + event.type](event.key, event.value);
     },
 
     /**
@@ -237,7 +227,7 @@ const Widget = new GObject.Class({
      * @param  {Object} event
      * @return {Void}
      */
-    _handle_nvidia_settings: function(actor, event) {
+    _handle_button_change: function(actor, event) {
         this._shell_exec_async('nvidia-settings');
     },
 
@@ -267,6 +257,8 @@ const Box = new GObject.Class({
 
         this.actor = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, });
         this.add(this.actor);
+
+        this.get_style_context().add_class('prime-indicator-prefs-box');
     },
 
     /* --- */
@@ -303,6 +295,236 @@ const Label = new GObject.Class({
         this.set_markup(this.get_text());
         this.set_line_wrap(true);
         this.set_justify(Gtk.Justification.CENTER);
+
+        this.get_style_context().add_class('prime-indicator-prefs-label');
+    },
+
+    /* --- */
+
+});
+
+/**
+ * Input constructor
+ * extends Box
+ *
+ * horizontal Gtk.Box object with label
+ * and widget for editing settings
+ *
+ * @param  {Object}
+ * @return {Object}
+ */
+const Input = new GObject.Class({
+
+    Name: 'Prefs.Input',
+    GTypeName: 'PrimeIndicatorPrefsInput',
+    Extends: Box,
+    Signals: {
+        changed: {
+            param_types: [ GObject.TYPE_OBJECT ],
+        },
+    },
+
+    /**
+     * Constructor
+     *
+     * @param  {String} key
+     * @param  {String} text
+     * @param  {String} tooltip
+     * @return {Void}
+     */
+    _init: function(key, text, tooltip) {
+        this.parent();
+        this.actor.set_orientation(Gtk.Orientation.HORIZONTAL);
+
+        this._key = key;
+        this._label = new Gtk.Label({ label: text, xalign: 0, tooltip_text: tooltip || '' });
+        this._widget = null;
+
+        this.actor.pack_start(this._label, true, true, 0);
+
+        this.get_style_context().add_class('prime-indicator-prefs-input');
+    },
+
+    /**
+     * Input change event handler
+     *
+     * @param  {Object} widget
+     * @return {Void}
+     */
+    _handle_change: function(widget) {
+        let emit = new GObject.Object();
+        emit.key = this.key;
+        emit.value = this.value;
+        emit.type = this.type;
+
+        this.emit('changed', emit);
+    },
+
+    /**
+     * Type getter
+     *
+     * @return {String}
+     */
+    get type() {
+        return 'variant';
+    },
+
+    /**
+     * Key getter
+     *
+     * @return {String}
+     */
+    get key() {
+        return this._key;
+    },
+
+    /**
+     * Enabled getter
+     *
+     * @return {Boolean}
+     */
+    get enabled() {
+        return this._widget.is_sensitive();
+    },
+
+    /**
+     * Enabled setter
+     *
+     * @param  {Boolean} value
+     * @return {Void}
+     */
+    set enabled(value) {
+        this._widget.set_sensitive(value);
+    },
+
+    /**
+     * Value getter
+     *
+     * @return {Boolean}
+     */
+    get value() {
+        return this._widget.value;
+    },
+
+    /**
+     * Value setter
+     *
+     * @param  {Mixed} value
+     * @return {Void}
+     */
+    set value(value) {
+        this._widget.value = value;
+    },
+
+    /* --- */
+
+});
+
+/**
+ * InputSwitch constructor
+ * extends Input
+ *
+ * @param  {Object}
+ * @return {Object}
+ */
+const InputSwitch = new GObject.Class({
+
+    Name: 'Prefs.InputSwitch',
+    GTypeName: 'PrimeIndicatorPrefsInputSwitch',
+    Extends: Input,
+
+    /**
+     * Constructor
+     *
+     * @return {Void}
+     */
+    _init: function(key, value, text, tooltip) {
+        this.parent(key, text, tooltip);
+
+        this._widget = new Gtk.Switch({ active: value });
+        this._widget.connect('notify::active', this._handle_change.bind(this));
+        this.actor.add(this._widget);
+
+        this.get_style_context().add_class('prime-indicator-prefs-input-switch');
+    },
+
+    /**
+     * Type getter
+     *
+     * @return {String}
+     */
+    get type() {
+        return 'boolean';
+    },
+
+    /**
+     * Value getter
+     *
+     * @return {Boolean}
+     */
+    get value() {
+        return this._widget.active;
+    },
+
+    /**
+     * Value setter
+     *
+     * @param  {Boolean} value
+     * @return {Void}
+     */
+    set value(value) {
+        this._widget.active = value;
+    },
+
+    /* --- */
+
+});
+
+/**
+ * InputButton constructor
+ * extends Input
+ *
+ * @param  {Object}
+ * @return {Object}
+ */
+const InputButton = new GObject.Class({
+
+    Name: 'Prefs.InputButton',
+    GTypeName: 'PrimeIndicatorPrefsInputButton',
+    Extends: Input,
+
+    /**
+     * Constructor
+     *
+     * @return {Void}
+     */
+    _init: function(label, text, tooltip) {
+        this.parent(null, text, tooltip);
+
+        this._widget = new Gtk.Button({ label: label, expand: false });
+        this._widget.connect('clicked', this._handle_change.bind(this));
+        this.actor.add(this._widget);
+
+        this.get_style_context().add_class('prime-indicator-prefs-input-button');
+    },
+
+    /**
+     * Value getter
+     *
+     * @return {Boolean}
+     */
+    get value() {
+        return null;
+    },
+
+    /**
+     * Value setter
+     *
+     * @param  {Boolean} value
+     * @return {Void}
+     */
+    set value(value) {
+        // pass
     },
 
     /* --- */
