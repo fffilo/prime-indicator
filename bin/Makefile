@@ -14,14 +14,14 @@ install:
 	echo "off" > /etc/prime-discrete
 	echo "off" > /var/tmp/prime-discrete
 	chmod 777 /var/tmp/prime-discrete
-	echo "[Desktop Entry]" > $$HOME/.config/autostart/prime-discrete-update.desktop
-	echo "Exec=$$HOME/.local/share/gnome-shell/extensions/prime-indicator@gnome-shell-exstensions.fffilo.github.com/bin/prime-discrete-update.sh" >> $$HOME/.config/autostart/prime-discrete-update.desktop
-	echo "Name=prime-discrete-update" >> $$HOME/.config/autostart/prime-discrete-update.desktop
-	echo "Type=Application" >> $$HOME/.config/autostart/prime-discrete-update.desktop
-	echo "X-GNOME-Autostart-enabled=true" >> $$HOME/.config/autostart/prime-discrete-update.desktop
+	echo "[Desktop Entry]" > /home/$$SUDO_USER/.config/autostart/prime-discrete-update.desktop
+	echo "Exec=/home/$$SUDO_USER/.local/share/gnome-shell/extensions/prime-indicator@gnome-shell-exstensions.fffilo.github.com/bin/prime-discrete-update.sh" >> /home/$$SUDO_USER/.config/autostart/prime-discrete-update.desktop
+	echo "Name=prime-discrete-update" >> /home/$$SUDO_USER/.config/autostart/prime-discrete-update.desktop
+	echo "Type=Application" >> /home/$$SUDO_USER/.config/autostart/prime-discrete-update.desktop
+	echo "X-GNOME-Autostart-enabled=true" >> /home/$$SUDO_USER/.config/autostart/prime-discrete-update.desktop
 
 uninstall:
-	rm -f $$HOME/.config/autostart/prime-discrete-update.desktop
+	rm -f /home/$$SUDO_USER/.config/autostart/prime-discrete-update.desktop
 	rm -f /var/tmp/prime-discrete
 	rm -f /etc/prime-discrete
 	rm -f /usr/local/bin/nvidia-settings
