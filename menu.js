@@ -44,9 +44,9 @@ var Widget = class Widget extends PopupMenu.PopupSubMenuMenuItem {
 
         this.ui = {};
         this.ui.intel = new PopupMenu.PopupMenuItem(_("Intel"));
-        this.ui.intel.connect('activate', this._handle_menu_item_click.bind(this, 'intel'));
+        this.ui.intel.connect('activate', this._handle_menu_item_click.bind(this));
         this.ui.nvidia = new PopupMenu.PopupMenuItem(_("NVidia"));
-        this.ui.nvidia.connect('activate', this._handle_menu_item_click.bind(this, 'nvidia'));
+        this.ui.nvidia.connect('activate', this._handle_menu_item_click.bind(this));
         this.ui.message = new PopupMenu.PopupMenuItem(_("Please log out and log back\nin to apply the changes"));
         this.ui.message.setSensitive(false);
 
@@ -147,14 +147,13 @@ var Widget = class Widget extends PopupMenu.PopupSubMenuMenuItem {
      *
      * @param  {Object} actor
      * @param  {Object} event
-     * @param  {String} gpu
      * @return {Void}
      */
-    _handle_menu_item_click(actor, event, gpu) {
+    _handle_menu_item_click(actor, event) {
         if (actor._ornament !== PopupMenu.Ornament.NONE)
             return;
 
-        this.switch.switch(gpu, function(e) {
+        this.switch.switch(this.ui.nvidia === actor ? 'nvidia' : 'intel', function(e) {
             if (!this.settings.get_boolean('auto-logout'))
                 return;
             if (!e.result)

@@ -118,7 +118,18 @@ var Switch = class Switch {
             });
 
             subprocess.init(null);
-            subprocess.communicate_utf8_async(null, null, this._handle_async_shell_exec.bind(this, command, callback));
+            subprocess.communicate_utf8_async(null, null, function(source, resource) {
+                let status = source.get_exit_status();
+                let [, stdout, stderr] = source.communicate_utf8_finish(resource);
+
+                if (typeof callback === 'function')
+                    callback.call(this, {
+                        status: status,
+                        stdin: command,
+                        stdout: stdout,
+                        stderr: stderr,
+                    });
+            }.bind(this));
         }
         catch(e) {
             if (typeof callback === 'function')
@@ -292,8 +303,6 @@ var Switch = class Switch {
      * @return {Void}
      */
     _handle_async_shell_exec(source, resource, stdin, callback) {
-        global.log("prime", "_handle_async_shell_exec", source, resource, stdin, callback);
-
         let status = source.get_exit_status();
         let [, stdout, stderr] = source.communicate_utf8_finish(resource);
 
