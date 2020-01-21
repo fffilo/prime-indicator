@@ -12,6 +12,7 @@ const GnomeSession = imports.misc.gnomeSession;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Prime = Me.imports.prime;
+const Icons = Me.imports.icons;
 const Log = Me.imports.log;
 const Settings = Me.imports.settings;
 const Translation = Me.imports.translation;
@@ -54,7 +55,7 @@ var Widget = class Widget extends PopupMenu.PopupSubMenuMenuItem {
         //this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         this.menu.addMenuItem(this.ui.message);
 
-        this.icon.icon_name = 'prime-menu-default-symbolic';
+        this.icon.set_gicon(new Icons.Icon(Icons.DEFAULT));
         let items = Main.panel.statusArea.aggregateMenu.menu._getMenuItems();
         Main.panel.statusArea.aggregateMenu.menu.addMenuItem(this, items.length - 1);
 
