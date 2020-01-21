@@ -4,10 +4,10 @@
 'use strict';
 
 // import modules
-const Lang = imports.lang;
+const GObject = imports.gi.GObject;
 const Main = imports.ui.main;
-const PopupMenu = imports.ui.popupMenu;
 const System = Main.panel.statusArea.aggregateMenu._system;
+const PopupMenu = imports.ui.popupMenu;
 const GnomeSession = imports.misc.gnomeSession;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
@@ -24,31 +24,28 @@ const _ = Translation.translate;
  * @param  {Object}
  * @return {Object}
  */
-var Widget = new Lang.Class({
-
-    Name: 'PrimeIndicator.Menu.Widget',
-    Extends: PopupMenu.PopupSubMenuMenuItem,
+var Widget = class Widget extends PopupMenu.PopupSubMenuMenuItem {
 
     /**
      * Constructor
      *
      * @return {Void}
      */
-    _init: function() {
-        this.parent(_("Prime Select"), true);
+    constructor() {
+        super(_("Prime Select"), true);
 
         this.settings = Settings.settings();
-        this.settings.connect('changed', Lang.bind(this, this._handle_settings));
+        this.settings.connect('changed', this._handle_settings.bind(this));
 
         this.switch = new Prime.Switch();
-        this.switch.connect('gpu-change', Lang.bind(this, this._handle_prime_gpu_change));
+        this.switch.connect('gpu-change', this._handle_prime_gpu_change.bind(this));
         this.switch.monitor();
 
         this.ui = {};
         this.ui.intel = new PopupMenu.PopupMenuItem(_("Intel"));
-        this.ui.intel.connect('activate', Lang.bind(this, this._handle_menu_item_click, 'intel'));
+        this.ui.intel.connect('activate', this._handle_menu_item_click.bind(this, 'intel'));
         this.ui.nvidia = new PopupMenu.PopupMenuItem(_("NVidia"));
-        this.ui.nvidia.connect('activate', Lang.bind(this, this._handle_menu_item_click, 'nvidia'));
+        this.ui.nvidia.connect('activate', this._handle_menu_item_click.bind(this, 'nvidia'));
         this.ui.message = new PopupMenu.PopupMenuItem(_("Please log out and log back\nin to apply the changes"));
         this.ui.message.setSensitive(false);
 
@@ -71,25 +68,25 @@ var Widget = new Lang.Class({
             this._log('can\'t find prime-smi command, logout notification disabled');
         if (!this.switch.command('settings'))
             this._log('can\'t find nvidia-settings command, settings disabled');
-    },
+    }
 
     /**
      * Destructor
      *
      * @return {Void}
      */
-    destroy: function() {
+    destroy() {
         this.switch.destroy();
         this.settings.run_dispose();
         this.parent();
-    },
+    }
 
     /**
      * Logout gnome session
      *
      * @return {Void}
      */
-    logout: function() {
+    logout() {
         let sessionManager = System._session || new GnomeSession.SessionManager();
         let mode = 1;
         // 0: Normal.
@@ -98,7 +95,7 @@ var Widget = new Lang.Class({
 
         this._log('gnome session logout');
         sessionManager.LogoutRemote(mode);
-    },
+    }
 
     /**
      * Proxy for global.log()
@@ -106,12 +103,12 @@ var Widget = new Lang.Class({
      * @param  {String} message
      * @return {Void}
      */
-    _log: function(message) {
+    _log(message) {
         let args = Array.prototype.slice.call(arguments);
         args.unshift('Menu.Widget');
 
         Log.journal.apply(Log.journal, args);
-    },
+    }
 
     /**
      * Refresh widget menu:
@@ -120,7 +117,7 @@ var Widget = new Lang.Class({
      *
      * @return {Void}
      */
-    _refresh: function() {
+    _refresh() {
         let gpu = this.switch.gpu;
         let query = this.switch.query;
         let sudo = this.switch.command('sudo');
@@ -131,7 +128,7 @@ var Widget = new Lang.Class({
         this.ui.nvidia.setSensitive(sudo && select);
         this.ui.nvidia.setOrnament(query === 'nvidia' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
         this.ui.message.actor.visible = gpu !== 'unknown' && gpu !== query && select;
-    },
+    }
 
     /**
      * Settings changed event handler
@@ -140,9 +137,9 @@ var Widget = new Lang.Class({
      * @param  {String} key
      * @return {Void}
      */
-    _handle_settings: function(actor, key) {
+    _handle_settings(actor, key) {
         // pass
-    },
+    }
 
     /**
      * Menu item click event handler
@@ -152,11 +149,11 @@ var Widget = new Lang.Class({
      * @param  {String} gpu
      * @return {Void}
      */
-    _handle_menu_item_click: function(actor, event, gpu) {
+    _handle_menu_item_click(actor, event, gpu) {
         if (actor._ornament !== PopupMenu.Ornament.NONE)
             return;
 
-        this.switch.switch(gpu, Lang.bind(this, function(e) {
+        this.switch.switch(gpu, function(e) {
             if (!this.settings.get_boolean('auto-logout'))
                 return;
             if (!e.result)
@@ -164,8 +161,8 @@ var Widget = new Lang.Class({
 
             this._log('logout on gpu switch enabled, logging out')
             this.logout();
-        }));
-    },
+        }.bind(this));
+    }
 
     /**
      * Prime switch gpu change event handler
@@ -174,10 +171,10 @@ var Widget = new Lang.Class({
      * @param  {String} gpu
      * @return {Void}
      */
-    _handle_prime_gpu_change: function(actor, gpu) {
+    _handle_prime_gpu_change(actor, gpu) {
         this._refresh();
-    },
+    }
 
     /* --- */
 
-});
+};

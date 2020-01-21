@@ -1,7 +1,6 @@
 /* -*- mode: js2; js2-basic-offset: 4; indent-tabs-mode: nil -*- */
 
 // import modules
-const Lang = imports.lang;
 const GObject = imports.gi.GObject;
 const Gtk = imports.gi.Gtk;
 const Gdk = imports.gi.Gdk;
@@ -54,7 +53,7 @@ const Widget = new GObject.Class({
         this.parent();
 
         this.settings = Settings.settings();
-        //this.settings.connect('changed', Lang.bind(this, this._handle_settings));
+        //this.settings.connect('changed', this._handle_settings.bind(this));
 
         let css = new Gtk.CssProvider();
         css.load_from_path(Me.path + '/prefs.css');
@@ -104,7 +103,7 @@ const Widget = new GObject.Class({
         let box = new Box();
         let label = new Gtk.Label({ label: _("Logout on GPU switch"), xalign: 0, tooltip_text: '' });
         let input = new Gtk.Switch({ active: value });
-        input.connect('notify::active', Lang.bind(this, this._handle_input_change));
+        input.connect('notify::active', this._handle_input_change.bind(this));
         box.actor.set_orientation(Gtk.Orientation.HORIZONTAL);
         box.actor.pack_start(label, true, true, 0);
         box.actor.add(input);
@@ -114,7 +113,7 @@ const Widget = new GObject.Class({
         label = new Gtk.Label({ label: _("NVIDIA Settings"), xalign: 0, tooltip_text: '' });
         input = new Gtk.Button({ label: _("Open"), expand: false });
         input.set_sensitive(this._which('nvidia-settings'));
-        input.connect('clicked', Lang.bind(this, this._handle_nvidia_settings));
+        input.connect('clicked', this._handle_nvidia_settings.bind(this));
         box.actor.set_orientation(Gtk.Orientation.HORIZONTAL);
         box.actor.pack_start(label, true, true, 0);
         box.actor.add(input);
