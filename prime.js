@@ -119,8 +119,8 @@ var Switch = class Switch {
 
             subprocess.init(null);
             subprocess.communicate_utf8_async(null, null, function(source, resource) {
-                let status = source.get_exit_status();
-                let [, stdout, stderr] = source.communicate_utf8_finish(resource);
+                let status = source.get_exit_status(),
+                    [, stdout, stderr] = source.communicate_utf8_finish(resource);
 
                 if (typeof callback === 'function')
                     callback.call(this, {

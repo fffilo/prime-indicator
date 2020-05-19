@@ -43,16 +43,25 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
         this.switch.monitor();
 
         this.ui = {};
-        this.ui.intel = new PopupMenu.PopupMenuItem(_("Intel"));
-        this.ui.intel.connect('activate', this._handleMenuItemClick.bind(this));
-        this.ui.nvidia = new PopupMenu.PopupMenuItem(_("NVidia"));
-        this.ui.nvidia.connect('activate', this._handleMenuItemClick.bind(this));
+        let switches = this.switch.switches;
+        if (switches.includes('nvidia')) {
+            this.ui.nvidia = new PopupMenu.PopupMenuItem(_("NVidia"));
+            this.ui.nvidia.connect('activate', this._handleMenuItemClick.bind(this));
+            this.menu.addMenuItem(this.ui.nvidia);
+        }
+        if (switches.includes('intel')) {
+            this.ui.intel = new PopupMenu.PopupMenuItem(_("Intel"));
+            this.ui.intel.connect('activate', this._handleMenuItemClick.bind(this));
+            this.menu.addMenuItem(this.ui.intel);
+        }
+        if (switches.includes('on-demand')) {
+            this.ui.demand = new PopupMenu.PopupMenuItem(_("On-Demand"));
+            this.ui.demand.connect('activate', this._handleMenuItemClick.bind(this));
+            this.menu.addMenuItem(this.ui.demand);
+        }
+
         this.ui.message = new PopupMenu.PopupMenuItem(_("Please log out and log back\nin to apply the changes"));
         this.ui.message.setSensitive(false);
-
-        this.menu.addMenuItem(this.ui.intel);
-        this.menu.addMenuItem(this.ui.nvidia);
-        //this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         this.menu.addMenuItem(this.ui.message);
 
         this.icon.set_gicon(new Icons.Icon(Icons.DEFAULT));
@@ -88,11 +97,11 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
      * @return {Void}
      */
     logout() {
-        let sessionManager = System._session || new GnomeSession.SessionManager();
-        let mode = 1;
-        // 0: Normal.
-        // 1: No confirmation inferface should be shown.
-        // 2: Forcefully logout. No confirmation will be shown and any inhibitors will be ignored.
+        let sessionManager = System._session || new GnomeSession.SessionManager(),
+            mode = 1;
+            // 0: Normal.
+            // 1: No confirmation inferface should be shown.
+            // 2: Forcefully logout. No confirmation will be shown and any inhibitors will be ignored.
 
         this._log('gnome session logout');
         sessionManager.LogoutRemote(mode);
@@ -119,15 +128,24 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
      * @return {Void}
      */
     _refresh() {
-        let gpu = this.switch.gpu;
-        let query = this.switch.query;
-        let sudo = this.switch.command('sudo');
-        let select = this.switch.command('select');
+        let gpu = this.switch.gpu,
+            query = this.switch.query,
+            sudo = this.switch.command('sudo'),
+            select = this.switch.command('select');
 
-        this.ui.intel.setSensitive(sudo && select);
-        this.ui.intel.setOrnament(query === 'intel' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
-        this.ui.nvidia.setSensitive(sudo && select);
-        this.ui.nvidia.setOrnament(query === 'nvidia' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
+        if (this.ui.nvidia) {
+            this.ui.nvidia.setSensitive(sudo && select);
+            this.ui.nvidia.setOrnament(query === 'nvidia' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
+        }
+        if (this.ui.intel) {
+            this.ui.intel.setSensitive(sudo && select);
+            this.ui.intel.setOrnament(query === 'intel' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
+        }
+        if (this.ui.demand) {
+            this.ui.demand.setSensitive(sudo && select);
+            this.ui.demand.setOrnament(query === 'on-demand' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
+        }
+
         this.ui.message.actor.visible = gpu !== 'unknown' && gpu !== query && select;
     }
 
@@ -153,7 +171,17 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
         if (actor._ornament !== PopupMenu.Ornament.NONE)
             return;
 
-        this.switch.switch(this.ui.nvidia === actor ? 'nvidia' : 'intel', function(e) {
+        let gpu = null;
+        if (this.ui.nvidia && this.ui.nvidia === actor)
+            gpu = 'nvidia';
+        else if (this.ui.intel && this.ui.intel === actor)
+            gpu = 'intel';
+        else if (this.ui.demand && this.ui.demand === actor)
+            gpu = 'on-demand';
+        else
+            throw new Error('Unknown GPU switch');
+
+        this.switch.switch(gpu, function(e) {
             if (!this.settings.get_boolean('auto-logout'))
                 return;
             if (!e.result)
