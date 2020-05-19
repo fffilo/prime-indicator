@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 7 - 2020-05-19
+### Changed
+- Gnome session crash fix
+
 ## Version 6 - 2020-05-19
 ### Changed
 - Gnome shell 3.36 support
