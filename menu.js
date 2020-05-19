@@ -20,7 +20,7 @@ const _ = Translation.translate;
 
 /**
  * Widget constructor
- * extends PopupMenu.PopupSeparatorMenuItem
+ * extends PopupMenu.PopupSubMenuMenuItem
  *
  * @param  {Object}
  * @return {Object}
@@ -44,21 +44,24 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
 
         this.ui = {};
         let switches = this.switch.switches;
-        if (switches.includes('nvidia')) {
-            this.ui.nvidia = new PopupMenu.PopupMenuItem(_("NVidia"));
-            this.ui.nvidia.connect('activate', this._handleMenuItemClick.bind(this));
-            this.menu.addMenuItem(this.ui.nvidia);
-        }
         if (switches.includes('intel')) {
             this.ui.intel = new PopupMenu.PopupMenuItem(_("Intel"));
             this.ui.intel.connect('activate', this._handleMenuItemClick.bind(this));
             this.menu.addMenuItem(this.ui.intel);
         }
+        if (switches.includes('nvidia')) {
+            this.ui.nvidia = new PopupMenu.PopupMenuItem(_("NVidia"));
+            this.ui.nvidia.connect('activate', this._handleMenuItemClick.bind(this));
+            this.menu.addMenuItem(this.ui.nvidia);
+        }
         if (switches.includes('on-demand')) {
-            this.ui.demand = new PopupMenu.PopupMenuItem(_("On-Demand"));
+            this.ui.demand = new PopupMenu.PopupMenuItem(_("NVidia On-Demand"));
             this.ui.demand.connect('activate', this._handleMenuItemClick.bind(this));
             this.menu.addMenuItem(this.ui.demand);
         }
+
+        this.ui.separator = new PopupMenu.PopupSeparatorMenuItem();
+        this.menu.addMenuItem(this.ui.separator);
 
         this.ui.message = new PopupMenu.PopupMenuItem(_("Please log out and log back\nin to apply the changes"));
         this.ui.message.setSensitive(false);
@@ -128,25 +131,25 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
      * @return {Void}
      */
     _refresh() {
-        let gpu = this.switch.gpu,
-            query = this.switch.query,
-            sudo = this.switch.command('sudo'),
-            select = this.switch.command('select');
+        let query = this.switch.query,
+            sensitive = this.switch.command('sudo') && this.switch.command('select'),
+            needsRestart = this.switch.needsRestart;
 
         if (this.ui.nvidia) {
-            this.ui.nvidia.setSensitive(sudo && select);
+            this.ui.nvidia.setSensitive(sensitive);
             this.ui.nvidia.setOrnament(query === 'nvidia' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
         }
         if (this.ui.intel) {
-            this.ui.intel.setSensitive(sudo && select);
+            this.ui.intel.setSensitive(sensitive);
             this.ui.intel.setOrnament(query === 'intel' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
         }
         if (this.ui.demand) {
-            this.ui.demand.setSensitive(sudo && select);
+            this.ui.demand.setSensitive(sensitive);
             this.ui.demand.setOrnament(query === 'on-demand' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
         }
 
-        this.ui.message.actor.visible = gpu !== 'unknown' && gpu !== query && select;
+        this.ui.separator.actor.visible = needsRestart;
+        this.ui.message.actor.visible = needsRestart;
     }
 
     /**

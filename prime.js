@@ -4,6 +4,7 @@
 'use strict';
 
 // import modules
+const GLib = imports.gi.GLib;
 const Gio = imports.gi.Gio;
 const Signals = imports.signals;
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -35,6 +36,10 @@ var Switch = class Switch {
             management: this._which('nvidia-smi'),
             settings: this._which('nvidia-settings'),
         }
+
+        // make getter store default query
+        // (if not already done so)
+        this.defaultQuery;
     }
 
     /**
@@ -190,6 +195,24 @@ var Switch = class Switch {
     }
 
     /**
+     * Property default query getter:
+     * query on system init
+     *
+     * @return {String}
+     */
+    get defaultQuery() {
+        let result = GLib.getenv('PRIME_INDICATOR_DEFAULT_QUERY');
+        if (result)
+            return result;
+
+        result = this.query;
+        GLib.setenv('PRIME_INDICATOR_DEFAULT_QUERY', result, true);
+        this._log('detected ' + result + ' as default prime option');
+
+        return this.defaultQuery;
+    }
+
+    /**
      * Get switches (valid arguments for
      * switch command)
      *
@@ -211,6 +234,25 @@ var Switch = class Switch {
             this._switches = [ 'nvidia', 'intel' ];
 
         return this.switches;
+    }
+
+    /**
+     * Does sysem need restarting:
+     * we store query value on initialization,
+     * and if this value differs from current
+     * one means that we need restart.
+
+     * Warning:
+     * This may not be 100% accurate. User can
+     * switch gpu (without restart) and then
+     * install extension. In this case
+     * defaultQuery variable will be
+     * invalid.
+     *
+     * @return {Boolean}
+     */
+    get needsRestart() {
+        return this.query !== this.defaultQuery && this.command('select');
     }
 
     /**
@@ -258,6 +300,9 @@ var Switch = class Switch {
             else
                 this._log('not switched to ' + gpu + ' (' + e.stderr.trim() + ')');
 
+            if (!e.status && this.needsRestart)
+                this._log('system restart required');
+
             if (typeof callback === 'function')
                 callback.call(this, {
                     gpu: gpu,
@@ -289,7 +334,7 @@ var Switch = class Switch {
             return;
 
         this._listener = Gio.File.new_for_path(this.index).monitor_file(Gio.FileMonitorFlags.NONE, null);
-        this._listener.connect('changed', this._handle_listener.bind(this));
+        this._listener.connect('changed', this._handleListener.bind(this));
     }
 
     /**
@@ -313,8 +358,8 @@ var Switch = class Switch {
      * @param  {Object} eventType
      * @return {Void}
      */
-    _handle_listener(file, otherFile, eventType) {
-        this.emit('gpu-change', this.gpu);
+    _handleListener(file, otherFile, eventType) {
+        this.emit('gpu-change', this.query);
     }
 
     /* --- */
