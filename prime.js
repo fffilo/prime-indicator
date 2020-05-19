@@ -190,6 +190,30 @@ var Switch = class Switch {
     }
 
     /**
+     * Get switches (valid arguments for
+     * switch command)
+     *
+     * @return {Array}
+     */
+    get switches() {
+        if (this._switches)
+            return this._switches.slice();;
+
+        let command = this.command('select'),
+            exec = this._shell_exec(command),
+            output = exec.stdout || exec.stderr,
+            args = output.trim().split(' ').pop().split('|');
+        if (args.length)
+            this._switches = args.filter((item) => {
+                return item !== 'query';
+            });
+        else
+            this._switches = [ 'nvidia', 'intel' ];
+
+        return this.switches;
+    }
+
+    /**
      * Get shell command
      *
      * @param  {String} cmd sudo|select|management|settings
