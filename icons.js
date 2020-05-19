@@ -4,6 +4,7 @@
 'use strict';
 
 // import modules
+const GObject = imports.gi.GObject;
 const Gio = imports.gi.Gio;
 const IconTheme = imports.gi.Gtk.IconTheme;
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -27,20 +28,20 @@ var init = function() {
  * @param  {Object}
  * @return {Class}
  */
-var Icon = class Icon extends Gio.FileIcon {
+var Icon = GObject.registerClass(class Icon extends  Gio.FileIcon {
 
     /**
      * Constructor
      *
      * @return {Void}
      */
-    constructor(icon) {
+    _init(icon) {
         let path = Me.path + '/assets/' + icon + '.svg';
         let file = Gio.File.new_for_path(path);
 
-        super({ file: file });
+        super._init({ file: file });
     }
 
     /* --- */
 
-};
+});
