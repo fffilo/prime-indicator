@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 6 - 2020-05-19
+### Changed
+- Gnome shell 3.36 support
+### Added
+- _NVidia On-Demand_ menu item
+
 ## Version 5 - 2020-01-21
 ### Changed
 - Gnome shell 3.34 support
