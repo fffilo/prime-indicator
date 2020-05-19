@@ -91,7 +91,7 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
     destroy() {
         this.switch.destroy();
         this.settings.run_dispose();
-        this.parent();
+        super.destroy();
     }
 
     /**

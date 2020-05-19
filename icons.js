@@ -28,7 +28,7 @@ var init = function() {
  * @param  {Object}
  * @return {Class}
  */
-var Icon = GObject.registerClass(class Icon extends  Gio.FileIcon {
+var Icon = GObject.registerClass(class Icon extends Gio.FileIcon {
 
     /**
      * Constructor
