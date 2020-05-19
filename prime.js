@@ -66,7 +66,7 @@ var Switch = class Switch {
      * @return {Mixed}
      */
     _which(command) {
-        let exec = this._shell_exec('which ' + command);
+        let exec = this._shellExec('which ' + command);
         return exec.stdout.trim() || exec.stderr.trim();
     }
 
@@ -76,7 +76,7 @@ var Switch = class Switch {
      * @param  {String} command
      * @return {Object}
      */
-    _shell_exec(command) {
+    _shellExec(command) {
         let result = {
             status: -1,
             stdin: command,
@@ -110,7 +110,7 @@ var Switch = class Switch {
      * @param  {Function} callback (optional)
      * @return {Void}
      */
-    _shell_exec_async(command, callback) {
+    _shellExecAsync(command, callback) {
         try {
             let subprocess = new Gio.Subprocess({
                 argv: command.split(' '),
@@ -164,7 +164,7 @@ var Switch = class Switch {
 
         let cmd = this.command('management');
         if (cmd) {
-            let exec = this._shell_exec(cmd + ' -L');
+            let exec = this._shellExec(cmd + ' -L');
             this._gpu = exec.status ? 'intel' : 'nvidia';
         }
         else
@@ -182,7 +182,7 @@ var Switch = class Switch {
     get query() {
         let cmd = this.command('select');
         if (cmd) {
-            let exec = this._shell_exec(cmd + ' query');
+            let exec = this._shellExec(cmd + ' query');
             return exec.stdout.trim() || exec.stderr.trim() || 'unknown';
         }
 
@@ -200,7 +200,7 @@ var Switch = class Switch {
             return this._switches.slice();;
 
         let command = this.command('select'),
-            exec = this._shell_exec(command),
+            exec = this._shellExec(command),
             output = exec.stdout || exec.stderr,
             args = output.trim().split(' ').pop().split('|');
         if (args.length)
@@ -252,7 +252,7 @@ var Switch = class Switch {
              + ' ' + gpu
 
         this._log('switching to ' + gpu);
-        this._shell_exec_async(cmd, function(e) {
+        this._shellExecAsync(cmd, function(e) {
             if (!e.status)
                 this._log('switched to ' + gpu);
             else
@@ -276,7 +276,7 @@ var Switch = class Switch {
         if (!cmd)
             return;
 
-        this._shell_exec_async(cmd);
+        this._shellExecAsync(cmd);
     }
 
     /**
@@ -315,28 +315,6 @@ var Switch = class Switch {
      */
     _handle_listener(file, otherFile, eventType) {
         this.emit('gpu-change', this.gpu);
-    }
-
-    /**
-     * Async shell exec event handler
-     *
-     * @param  {Gio.Subprocess} source
-     * @param  {Gio.Task}       resource
-     * @param  {String}         stdin
-     * @param  {Function}       callback (optional)
-     * @return {Void}
-     */
-    _handle_async_shell_exec(source, resource, stdin, callback) {
-        let status = source.get_exit_status();
-        let [, stdout, stderr] = source.communicate_utf8_finish(resource);
-
-        if (typeof callback === 'function')
-            callback.call(this, {
-                status: status,
-                stdin: stdin,
-                stdout: stdout,
-                stderr: stderr,
-            });
     }
 
     /* --- */

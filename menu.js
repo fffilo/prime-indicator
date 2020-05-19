@@ -36,17 +36,17 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
         super._init(_("Prime Select"), true);
 
         this.settings = Settings.settings();
-        this.settings.connect('changed', this._handle_settings.bind(this));
+        this.settings.connect('changed', this._handleSettings.bind(this));
 
         this.switch = new Prime.Switch();
-        this.switch.connect('gpu-change', this._handle_prime_gpu_change.bind(this));
+        this.switch.connect('gpu-change', this._handlePrimeGpuChange.bind(this));
         this.switch.monitor();
 
         this.ui = {};
         this.ui.intel = new PopupMenu.PopupMenuItem(_("Intel"));
-        this.ui.intel.connect('activate', this._handle_menu_item_click.bind(this));
+        this.ui.intel.connect('activate', this._handleMenuItemClick.bind(this));
         this.ui.nvidia = new PopupMenu.PopupMenuItem(_("NVidia"));
-        this.ui.nvidia.connect('activate', this._handle_menu_item_click.bind(this));
+        this.ui.nvidia.connect('activate', this._handleMenuItemClick.bind(this));
         this.ui.message = new PopupMenu.PopupMenuItem(_("Please log out and log back\nin to apply the changes"));
         this.ui.message.setSensitive(false);
 
@@ -138,7 +138,7 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
      * @param  {String} key
      * @return {Void}
      */
-    _handle_settings(actor, key) {
+    _handleSettings(actor, key) {
         // pass
     }
 
@@ -149,7 +149,7 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
      * @param  {Object} event
      * @return {Void}
      */
-    _handle_menu_item_click(actor, event) {
+    _handleMenuItemClick(actor, event) {
         if (actor._ornament !== PopupMenu.Ornament.NONE)
             return;
 
@@ -171,7 +171,7 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
      * @param  {String} gpu
      * @return {Void}
      */
-    _handle_prime_gpu_change(actor, gpu) {
+    _handlePrimeGpuChange(actor, gpu) {
         this._refresh();
     }
 

@@ -60,8 +60,8 @@ const Widget = new GObject.Class({
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
         let notebook = new Gtk.Notebook();
-        notebook.append_page(this._page_settings(), new Gtk.Label({ label: _("Settings"), }));
-        notebook.append_page(this._page_about(), new Gtk.Label({ label: _("About"), }));
+        notebook.append_page(this._pageSettings(), new Gtk.Label({ label: _("Settings"), }));
+        notebook.append_page(this._pageAbout(), new Gtk.Label({ label: _("About"), }));
         this.add(notebook);
 
         this.show_all();
@@ -95,12 +95,12 @@ const Widget = new GObject.Class({
      *
      * @return {Object}
      */
-    _page_settings: function() {
+    _pageSettings: function() {
         let page = this._page();
         page.get_style_context().add_class('prime-indicator-prefs-page-settings');
 
         let input = new InputSwitch('auto-logout', this.settings.get_boolean('auto-logout'), _("Logout on GPU switch"), _("Logout on GPU switch"));
-        input.connect('changed', this._handle_input_change.bind(this));
+        input.connect('changed', this._handleInputChange.bind(this));
         page.actor.add(input);
 
         input = new InputButton(_("Open"), _("NVIDIA Settings"));
@@ -115,7 +115,7 @@ const Widget = new GObject.Class({
      *
      * @return {Object}
      */
-    _page_about: function() {
+    _pageAbout: function() {
         let page = this._page();
         page.get_style_context().add_class('prime-indicator-prefs-page-about');
 
@@ -158,7 +158,7 @@ const Widget = new GObject.Class({
      * @return {Mixed}
      */
     _which: function(command) {
-        let result = this._shell_exec('which ' + command);
+        let result = this._shellExec('which ' + command);
         if (result)
             result = result.trim();
 
@@ -171,7 +171,7 @@ const Widget = new GObject.Class({
      * @param  {String} command
      * @return {Mixed}
      */
-    _shell_exec: function(command) {
+    _shellExec: function(command) {
         try {
             let [ok, output, error, status] = GLib.spawn_sync(null, command.split(' '), null, GLib.SpawnFlags.SEARCH_PATH, null);
             if (ok) {
@@ -194,7 +194,7 @@ const Widget = new GObject.Class({
      * @param  {String} command
      * @return {Void}
      */
-    _shell_exec_async: function(command) {
+    _shellExecAsync: function(command) {
         try {
             let [ok, pid] = GLib.spawn_async(null, command.split(' '), null, GLib.SpawnFlags.SEARCH_PATH, null);
             if (ok)
@@ -214,7 +214,7 @@ const Widget = new GObject.Class({
      * @param  {Object} event
      * @return {Void}
      */
-    _handle_input_change: function(actor, event) {
+    _handleInputChange: function(actor, event) {
         let old = this.settings['get_' + event.type](event.key);
         if (old != event.value)
             this.settings['set_' + event.type](event.key, event.value);
@@ -228,7 +228,7 @@ const Widget = new GObject.Class({
      * @return {Void}
      */
     _handle_button_change: function(actor, event) {
-        this._shell_exec_async('nvidia-settings');
+        this._shellExecAsync('nvidia-settings');
     },
 
 });
@@ -351,7 +351,7 @@ const Input = new GObject.Class({
      * @param  {Object} widget
      * @return {Void}
      */
-    _handle_change: function(widget) {
+    _handleChange: function(widget) {
         let emit = new GObject.Object();
         emit.key = this.key;
         emit.value = this.value;
@@ -442,7 +442,7 @@ const InputSwitch = new GObject.Class({
         this.parent(key, text, tooltip);
 
         this._widget = new Gtk.Switch({ active: value });
-        this._widget.connect('notify::active', this._handle_change.bind(this));
+        this._widget.connect('notify::active', this._handleChange.bind(this));
         this.actor.add(this._widget);
 
         this.get_style_context().add_class('prime-indicator-prefs-input-switch');
@@ -502,7 +502,7 @@ const InputButton = new GObject.Class({
         this.parent(null, text, tooltip);
 
         this._widget = new Gtk.Button({ label: label, expand: false });
-        this._widget.connect('clicked', this._handle_change.bind(this));
+        this._widget.connect('clicked', this._handleChange.bind(this));
         this.actor.add(this._widget);
 
         this.get_style_context().add_class('prime-indicator-prefs-input-button');
