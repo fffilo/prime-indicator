@@ -80,7 +80,7 @@ var Widget = GObject.registerClass({
 
         //this._ui.preferences = new PopupMenu.PopupMenuItem(_("Preferences"));
         //this._ui.preferences.connect('activate', (actor, event) => {
-        //    this.preferences();
+        //    ExtensionUtils.openPrefs();
         //});
         //this.menu.addMenuItem(this._ui.preferences);
 
@@ -135,18 +135,6 @@ var Widget = GObject.registerClass({
      */
     get switch() {
         return this._switch;
-    }
-
-    /**
-     * Open extension preferences dialog.
-     *
-     * @return {Void}
-     */
-    preferences() {
-        if (typeof ExtensionUtils.openPrefs === 'function')
-            ExtensionUtils.openPrefs();
-        else
-            Util.spawn(['gnome-shell-extension-prefs', Me.metadata.uuid]);
     }
 
     /**
