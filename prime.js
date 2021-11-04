@@ -42,6 +42,10 @@ var Switch = class Switch {
      */
     destroy() {
         this.unmonitor();
+
+        delete this._listener;
+        delete this._gpu;
+        delete this._commands;
     }
 
     /**
@@ -240,7 +244,7 @@ var Switch = class Switch {
      *
      * @return {Boolean}
      */
-    get needsRestart() {
+    get isRestartNeeded() {
         return this.query !== this.defaultQuery && this.command('select');
     }
 
@@ -278,8 +282,8 @@ var Switch = class Switch {
             return;
 
         let cmd = sudo
-             + ' ' + select
-             + ' ' + gpu
+            + ' ' + select
+            + ' ' + gpu;
 
         this._log('switching to ' + gpu);
         this._shellExecAsync(cmd, (e) => {
@@ -288,7 +292,7 @@ var Switch = class Switch {
             else
                 this._log('not switched to ' + gpu + ' (' + e.stderr.trim() + ')');
 
-            if (!e.status && this.needsRestart)
+            if (!e.status && this.isRestartNeeded)
                 this._log('system restart required');
 
             if (typeof callback === 'function')

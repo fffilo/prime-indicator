@@ -38,6 +38,8 @@ var Widget = GObject.registerClass({
         this.switch.connect('gpu-change', this._handlePrimeGpuChange.bind(this));
         this.switch.monitor();
 
+        this._pending = false;
+
         this._ui = {};
         let switches = this.switch.switches;
         if (switches.includes('intel')) {
@@ -61,9 +63,14 @@ var Widget = GObject.registerClass({
         this._ui.separator = new PopupMenu.PopupSeparatorMenuItem();
         this.menu.addMenuItem(this._ui.separator);
 
-        this._ui.message = new PopupMenu.PopupMenuItem(_("Please log out and log back\nin to apply the changes"));
-        this._ui.message.setSensitive(false);
-        this.menu.addMenuItem(this._ui.message);
+        this._ui.pleaseWait = new PopupMenu.PopupMenuItem(_("Please wait for the operation\nto complete"));
+        this._ui.pleaseWait.setSensitive(false);
+        this.menu.addMenuItem(this._ui.pleaseWait);
+
+        //this._ui.pleaseRestart = new PopupMenu.PopupMenuItem(_("Please restart the system\nto apply the changes"));
+        this._ui.pleaseRestart = new PopupMenu.PopupMenuItem(_("Please log out and log back in\nto apply the changes"));
+        this._ui.pleaseRestart.setSensitive(false);
+        this.menu.addMenuItem(this._ui.pleaseRestart);
 
         //this._ui.preferences = new PopupMenu.PopupMenuItem(_("Preferences"));
         //this._ui.preferences.connect('activate', (actor, event) => {
@@ -101,6 +108,7 @@ var Widget = GObject.registerClass({
         this.switch.destroy();
         this.settings.run_dispose();
 
+        delete this._pending;
         delete this._switch;
         delete this._settings;
 
@@ -159,8 +167,9 @@ var Widget = GObject.registerClass({
      */
     _refresh() {
         let query = this.switch.query,
-            sensitive = this.switch.command('sudo') && this.switch.command('select'),
-            needsRestart = this.switch.needsRestart;
+            pending = this._pending,
+            isRestartNeeded = this.switch.isRestartNeeded,
+            sensitive = !pending ? this.switch.command('sudo') && this.switch.command('select') : false;
 
         if (this._ui.nvidia) {
             this._ui.nvidia.setSensitive(sensitive);
@@ -175,8 +184,9 @@ var Widget = GObject.registerClass({
             this._ui.demand.setOrnament(query === 'on-demand' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
         }
 
-        this._ui.separator.actor.visible = needsRestart;
-        this._ui.message.actor.visible = needsRestart;
+        this._ui.separator.actor.visible = pending || isRestartNeeded;
+        this._ui.pleaseWait.actor.visible = pending;
+        this._ui.pleaseRestart.actor.visible = pending ? false : isRestartNeeded;
     }
 
     /**
@@ -211,7 +221,13 @@ var Widget = GObject.registerClass({
         else
             throw new Error('Unknown GPU switch');
 
+        this._pending = true;
+        this._refresh();
+
         this.switch.switch(gpu, (e) => {
+            this._pending = false;
+            this._refresh();
+
             if (!this.settings.get_boolean('auto-logout'))
                 return;
             if (!e.result)
