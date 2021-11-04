@@ -3,7 +3,8 @@
 ## Version 8 - 2021-11-04
 ### Changed
 - Port extension to Gnome Shell 40
-- "Please wait for the operation to complete" message
+- Display _Please wait for the operation to complete_ message on GPU switch
+- Display _Logging out_ message on session logout
 
 ## Version 7 - 2020-05-19
 ### Changed

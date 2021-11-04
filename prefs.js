@@ -5,7 +5,7 @@ const {GObject, Gtk, Gdk, GdkPixbuf, GLib} = imports.gi;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Icons = Me.imports.icons;
-const _ = imports.gettext.gettext;
+const _ = ExtensionUtils.gettext || imports.gettext.gettext;
 
 /**
  * Extension preferences initialization.

@@ -4,6 +4,7 @@
 'use strict';
 
 // Import modules.
+const Mainloop = imports.mainloop;
 const GObject = imports.gi.GObject;
 const Main = imports.ui.main;
 const PopupMenu = imports.ui.popupMenu;
@@ -13,7 +14,7 @@ const Me = ExtensionUtils.getCurrentExtension();
 const Prime = Me.imports.prime;
 const Icons = Me.imports.icons;
 const Log = Me.imports.log;
-const _ = imports.gettext.gettext;
+const _ = ExtensionUtils.gettext || imports.gettext.gettext;
 
 /**
  * Widget extends PopupMenu.PopupSubMenuMenuItem.
@@ -37,6 +38,7 @@ var Widget = GObject.registerClass({
         this.switch.monitor();
 
         this._pending = false;
+        this._loggingOut = false;
 
         this._ui = {};
         let switches = this.switch.switches;
@@ -61,21 +63,22 @@ var Widget = GObject.registerClass({
         this._ui.separator = new PopupMenu.PopupSeparatorMenuItem();
         this.menu.addMenuItem(this._ui.separator);
 
-        this._ui.pleaseWait = new PopupMenu.PopupMenuItem(_("Please wait for the operation\nto complete"));
-        this._ui.pleaseWait.setSensitive(false);
-        this.menu.addMenuItem(this._ui.pleaseWait);
+        this._ui.messagePending = new PopupMenu.PopupMenuItem(_("Please wait for the operation\nto complete"));
+        this._ui.messagePending.setSensitive(false);
+        this.menu.addMenuItem(this._ui.messagePending);
 
-        //this._ui.pleaseRestart = new PopupMenu.PopupMenuItem(_("Please restart the system\nto apply the changes"));
-        this._ui.pleaseRestart = new PopupMenu.PopupMenuItem(_("Please log out and log back in\nto apply the changes"));
-        this._ui.pleaseRestart.setSensitive(false);
-        this.menu.addMenuItem(this._ui.pleaseRestart);
+        //this._ui.messageRestart = new PopupMenu.PopupMenuItem(_("Please restart the system\nto apply the changes"));
+        this._ui.messageRestart = new PopupMenu.PopupMenuItem(_("Please log out and log back in\nto apply the changes"));
+        this._ui.messageRestart.setSensitive(false);
+        this.menu.addMenuItem(this._ui.messageRestart);
+
+        this._ui.messageLoggingOut = new PopupMenu.PopupMenuItem(_("Logging out..."));
+        this._ui.messageLoggingOut.setSensitive(false);
+        this.menu.addMenuItem(this._ui.messageLoggingOut);
 
         //this._ui.preferences = new PopupMenu.PopupMenuItem(_("Preferences"));
         //this._ui.preferences.connect('activate', (actor, event) => {
-        //    if (typeof ExtensionUtils.openPrefs === 'function')
-        //        ExtensionUtils.openPrefs();
-        //    else
-        //        Util.spawn(['gnome-shell-extension-prefs', Me.metadata.uuid]);
+        //    this.preferences();
         //});
         //this.menu.addMenuItem(this._ui.preferences);
 
@@ -106,6 +109,7 @@ var Widget = GObject.registerClass({
         this.switch.destroy();
         this.settings.run_dispose();
 
+        delete this._loggingOut;
         delete this._pending;
         delete this._switch;
         delete this._settings;
@@ -129,6 +133,18 @@ var Widget = GObject.registerClass({
      */
     get switch() {
         return this._switch;
+    }
+
+    /**
+     * Open extension preferences dialog.
+     *
+     * @return {Void}
+     */
+    preferences() {
+        if (typeof ExtensionUtils.openPrefs === 'function')
+            ExtensionUtils.openPrefs();
+        else
+            Util.spawn(['gnome-shell-extension-prefs', Me.metadata.uuid]);
     }
 
     /**
@@ -166,8 +182,9 @@ var Widget = GObject.registerClass({
     _refresh() {
         let query = this.switch.query,
             pending = this._pending,
+            loggingOut = this._loggingOut,
             isRestartNeeded = this.switch.isRestartNeeded,
-            sensitive = !pending ? this.switch.command('sudo') && this.switch.command('select') : false;
+            sensitive = (!pending && !loggingOut) ? this.switch.command('sudo') && this.switch.command('select') : false;
 
         if (this._ui.nvidia) {
             this._ui.nvidia.setSensitive(sensitive);
@@ -182,9 +199,10 @@ var Widget = GObject.registerClass({
             this._ui.demand.setOrnament(query === 'on-demand' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
         }
 
-        this._ui.separator.actor.visible = pending || isRestartNeeded;
-        this._ui.pleaseWait.actor.visible = pending;
-        this._ui.pleaseRestart.actor.visible = pending ? false : isRestartNeeded;
+        this._ui.separator.actor.visible = pending || isRestartNeeded || loggingOut;
+        this._ui.messagePending.actor.visible = loggingOut ? false : pending;
+        this._ui.messageRestart.actor.visible = (loggingOut || pending) ? false : isRestartNeeded;
+        this._ui.messageLoggingOut.actor.visible = loggingOut;
     }
 
     /**
@@ -223,16 +241,29 @@ var Widget = GObject.registerClass({
         this._refresh();
 
         this.switch.switch(gpu, (e) => {
+            let doRestart = true
+                && e.result
+                && this.settings.get_boolean('auto-logout')
+                && this.switch.isRestartNeeded;
+            if (!doRestart) {
+                this._pending = false;
+                this._refresh();
+
+                return;
+            }
+
+            this._log('logout on gpu switch enabled, logging out');
             this._pending = false;
+            this._loggingOut = true;
             this._refresh();
 
-            if (!this.settings.get_boolean('auto-logout'))
-                return;
-            if (!e.result)
-                return;
+            // Logout with delay.
+            Mainloop.timeout_add(1000, () => {
+                this.logout();
 
-            this._log('logout on gpu switch enabled, logging out')
-            this.logout();
+                // Stop repeating.
+                return false;
+            });
         });
     }
 
