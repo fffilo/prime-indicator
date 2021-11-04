@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 8 - 2021-11-04
+### Changed
+- Port extension to Gnome Shell 40
+- "Please wait for the operation to complete" message
+
 ## Version 7 - 2020-05-19
 ### Changed
 - Gnome session crash fix
