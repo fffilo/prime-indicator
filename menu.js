@@ -1,12 +1,11 @@
 /* -*- mode: js2; js2-basic-offset: 4; indent-tabs-mode: nil -*- */
 
-// strict mode
+// Strict mode.
 'use strict';
 
-// import modules
+// Import modules.
 const GObject = imports.gi.GObject;
 const Main = imports.ui.main;
-const System = Main.panel.statusArea.aggregateMenu._system;
 const PopupMenu = imports.ui.popupMenu;
 const GnomeSession = imports.misc.gnomeSession;
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -19,53 +18,61 @@ const Translation = Me.imports.translation;
 const _ = Translation.translate;
 
 /**
- * Widget constructor
- * extends PopupMenu.PopupSubMenuMenuItem
- *
- * @param  {Object}
- * @return {Object}
+ * Widget extends PopupMenu.PopupSubMenuMenuItem.
  */
-var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMenuItem {
-
+var Widget = GObject.registerClass({
+    GTypeName: 'PrimeIndicatorMenuWidget',
+}, class Widget extends PopupMenu.PopupSubMenuMenuItem {
     /**
-     * Constructor
+     * Constructor.
      *
      * @return {Void}
      */
     _init() {
         super._init(_("Prime Select"), true);
 
-        this.settings = Settings.settings();
+        this._settings = Settings.settings();
         this.settings.connect('changed', this._handleSettings.bind(this));
 
-        this.switch = new Prime.Switch();
+        this._switch = new Prime.Switch();
         this.switch.connect('gpu-change', this._handlePrimeGpuChange.bind(this));
         this.switch.monitor();
 
-        this.ui = {};
+        this._ui = {};
         let switches = this.switch.switches;
         if (switches.includes('intel')) {
-            this.ui.intel = new PopupMenu.PopupMenuItem(_("Intel"));
-            this.ui.intel.connect('activate', this._handleMenuItemClick.bind(this));
-            this.menu.addMenuItem(this.ui.intel);
+            this._ui.intel = new PopupMenu.PopupMenuItem(_("Intel"));
+            this._ui.intel.connect('activate', this._handleMenuItemClick.bind(this));
+            this.menu.addMenuItem(this._ui.intel);
         }
         if (switches.includes('nvidia')) {
-            this.ui.nvidia = new PopupMenu.PopupMenuItem(_("NVidia"));
-            this.ui.nvidia.connect('activate', this._handleMenuItemClick.bind(this));
-            this.menu.addMenuItem(this.ui.nvidia);
+            this._ui.nvidia = new PopupMenu.PopupMenuItem(_("NVidia"));
+            this._ui.nvidia.connect('activate', this._handleMenuItemClick.bind(this));
+            this.menu.addMenuItem(this._ui.nvidia);
         }
         if (switches.includes('on-demand')) {
-            this.ui.demand = new PopupMenu.PopupMenuItem(_("NVidia On-Demand"));
-            this.ui.demand.connect('activate', this._handleMenuItemClick.bind(this));
-            this.menu.addMenuItem(this.ui.demand);
+            this._ui.demand = new PopupMenu.PopupMenuItem(_("NVidia On-Demand"));
+            this._ui.demand.connect('activate', this._handleMenuItemClick.bind(this));
+            this.menu.addMenuItem(this._ui.demand);
         }
+        if (!switches.length)
+            this.set_reactive(false);
 
-        this.ui.separator = new PopupMenu.PopupSeparatorMenuItem();
-        this.menu.addMenuItem(this.ui.separator);
+        this._ui.separator = new PopupMenu.PopupSeparatorMenuItem();
+        this.menu.addMenuItem(this._ui.separator);
 
-        this.ui.message = new PopupMenu.PopupMenuItem(_("Please log out and log back\nin to apply the changes"));
-        this.ui.message.setSensitive(false);
-        this.menu.addMenuItem(this.ui.message);
+        this._ui.message = new PopupMenu.PopupMenuItem(_("Please log out and log back\nin to apply the changes"));
+        this._ui.message.setSensitive(false);
+        this.menu.addMenuItem(this._ui.message);
+
+        //this._ui.preferences = new PopupMenu.PopupMenuItem(_("Preferences"));
+        //this._ui.preferences.connect('activate', (actor, event) => {
+        //    if (typeof ExtensionUtils.openPrefs === 'function')
+        //        ExtensionUtils.openPrefs();
+        //    else
+        //        Util.spawn(['gnome-shell-extension-prefs', Me.metadata.uuid]);
+        //});
+        //this.menu.addMenuItem(this._ui.preferences);
 
         this.icon.set_gicon(new Icons.Icon(Icons.DEFAULT));
         let items = Main.panel.statusArea.aggregateMenu.menu._getMenuItems();
@@ -81,26 +88,50 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
             this._log('can\'t find prime-smi command, logout notification disabled');
         if (!this.switch.command('settings'))
             this._log('can\'t find nvidia-settings command, settings disabled');
+        if (!switches.length)
+            this._log('can\'t find any prime switch, select disabled');
     }
 
     /**
-     * Destructor
+     * Destructor.
      *
      * @return {Void}
      */
     destroy() {
         this.switch.destroy();
         this.settings.run_dispose();
+
+        delete this._switch;
+        delete this._settings;
+
         super.destroy();
     }
 
     /**
-     * Logout gnome session
+     * Settings property getter.
+     *
+     * @return {Gio.Settings}
+     */
+    get settings() {
+        return this._settings;
+    }
+
+    /**
+     * Switch property getter.
+     *
+     * @return {Prime.Switch}
+     */
+    get switch() {
+        return this._switch;
+    }
+
+    /**
+     * Logout gnome session.
      *
      * @return {Void}
      */
     logout() {
-        let sessionManager = System._session || new GnomeSession.SessionManager(),
+        let sessionManager = new GnomeSession.SessionManager(),
             mode = 1;
             // 0: Normal.
             // 1: No confirmation inferface should be shown.
@@ -111,22 +142,18 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
     }
 
     /**
-     * Proxy for global.log()
+     * Proxy for global.log().
      *
-     * @param  {String} message
+     * @param  {...String} message
      * @return {Void}
      */
-    _log(message) {
-        let args = Array.prototype.slice.call(arguments);
-        args.unshift('Menu.Widget');
-
-        Log.journal.apply(Log.journal, args);
+    _log(...message) {
+        Log.journal('Menu.Widget', message);
     }
 
     /**
      * Refresh widget menu:
-     * set items sensitivity and
-     * show/hide logout message
+     * set items sensitivity and show/hide logout message.
      *
      * @return {Void}
      */
@@ -135,25 +162,25 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
             sensitive = this.switch.command('sudo') && this.switch.command('select'),
             needsRestart = this.switch.needsRestart;
 
-        if (this.ui.nvidia) {
-            this.ui.nvidia.setSensitive(sensitive);
-            this.ui.nvidia.setOrnament(query === 'nvidia' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
+        if (this._ui.nvidia) {
+            this._ui.nvidia.setSensitive(sensitive);
+            this._ui.nvidia.setOrnament(query === 'nvidia' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
         }
-        if (this.ui.intel) {
-            this.ui.intel.setSensitive(sensitive);
-            this.ui.intel.setOrnament(query === 'intel' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
+        if (this._ui.intel) {
+            this._ui.intel.setSensitive(sensitive);
+            this._ui.intel.setOrnament(query === 'intel' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
         }
-        if (this.ui.demand) {
-            this.ui.demand.setSensitive(sensitive);
-            this.ui.demand.setOrnament(query === 'on-demand' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
+        if (this._ui.demand) {
+            this._ui.demand.setSensitive(sensitive);
+            this._ui.demand.setOrnament(query === 'on-demand' ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE);
         }
 
-        this.ui.separator.actor.visible = needsRestart;
-        this.ui.message.actor.visible = needsRestart;
+        this._ui.separator.actor.visible = needsRestart;
+        this._ui.message.actor.visible = needsRestart;
     }
 
     /**
-     * Settings changed event handler
+     * Settings changed event handler.
      *
      * @param  {Object} actor
      * @param  {String} key
@@ -164,10 +191,10 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
     }
 
     /**
-     * Menu item click event handler
+     * Menu item click event handler.
      *
-     * @param  {Object} actor
-     * @param  {Object} event
+     * @param  {PopupMenuItem} widget
+     * @param  {Clutter.Event} event
      * @return {Void}
      */
     _handleMenuItemClick(actor, event) {
@@ -175,16 +202,16 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
             return;
 
         let gpu = null;
-        if (this.ui.nvidia && this.ui.nvidia === actor)
+        if (this._ui.nvidia && this._ui.nvidia === actor)
             gpu = 'nvidia';
-        else if (this.ui.intel && this.ui.intel === actor)
+        else if (this._ui.intel && this._ui.intel === actor)
             gpu = 'intel';
-        else if (this.ui.demand && this.ui.demand === actor)
+        else if (this._ui.demand && this._ui.demand === actor)
             gpu = 'on-demand';
         else
             throw new Error('Unknown GPU switch');
 
-        this.switch.switch(gpu, function(e) {
+        this.switch.switch(gpu, (e) => {
             if (!this.settings.get_boolean('auto-logout'))
                 return;
             if (!e.result)
@@ -192,11 +219,11 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
 
             this._log('logout on gpu switch enabled, logging out')
             this.logout();
-        }.bind(this));
+        });
     }
 
     /**
-     * Prime switch gpu change event handler
+     * Prime switch gpu change event handler.
      *
      * @param  {Object} actor
      * @param  {String} gpu
@@ -207,5 +234,4 @@ var Widget = GObject.registerClass(class Widget extends PopupMenu.PopupSubMenuMe
     }
 
     /* --- */
-
 });

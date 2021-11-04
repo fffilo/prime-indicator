@@ -1,27 +1,21 @@
 /* -*- mode: js2; js2-basic-offset: 4; indent-tabs-mode: nil -*- */
 
-// strict mode
+// Strict mode.
 'use strict';
 
-// import modules
-const GLib = imports.gi.GLib;
-const Gio = imports.gi.Gio;
+// Import modules.
+const {GLib, Gio} = imports.gi;
 const Signals = imports.signals;
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+const Me = imports.misc.extensionUtils.getCurrentExtension();
 const Log = Me.imports.log;
 
 /**
- * Switch constructor:
- * prime profiles manipulation
- *
- * @param  {Object}
- * @return {Object}
+ * Switch:
+ * prime profiles manipulation.
  */
 var Switch = class Switch {
-
     /**
-     * Constructor
+     * Constructor.
      *
      * @return {Void}
      */
@@ -37,13 +31,12 @@ var Switch = class Switch {
             settings: this._which('nvidia-settings'),
         }
 
-        // make getter store default query
-        // (if not already done so)
+        // Make getter store default query (if not already done so).
         this.defaultQuery;
     }
 
     /**
-     * Destructor
+     * Destructor.
      *
      * @return {Void}
      */
@@ -52,20 +45,17 @@ var Switch = class Switch {
     }
 
     /**
-     * Proxy for global.log()
+     * Proxy for global.log().
      *
-     * @param  {String} message
+     * @param  {...String} message
      * @return {Void}
      */
-    _log(message) {
-        let args = Array.prototype.slice.call(arguments);
-        args.unshift('Prime.Switch');
-
-        Log.journal.apply(Log.journal, args);
+    _log(...message) {
+        Log.journal('Prime.Switch', message);
     }
 
     /**
-     * `which $command` result
+     * `which $command` result.
      *
      * @param  {String} command
      * @return {Mixed}
@@ -76,7 +66,7 @@ var Switch = class Switch {
     }
 
     /**
-     * Shell execute command
+     * Shell execute command.
      *
      * @param  {String} command
      * @return {Object}
@@ -87,7 +77,7 @@ var Switch = class Switch {
             stdin: command,
             stdout: '',
             stderr: '',
-        }
+        };
 
         try {
             let subprocess = new Gio.Subprocess({
@@ -109,7 +99,7 @@ var Switch = class Switch {
     }
 
     /**
-     * Shell execute command
+     * Shell execute command.
      *
      * @param  {String}   command
      * @param  {Function} callback (optional)
@@ -123,7 +113,7 @@ var Switch = class Switch {
             });
 
             subprocess.init(null);
-            subprocess.communicate_utf8_async(null, null, function(source, resource) {
+            subprocess.communicate_utf8_async(null, null, (source, resource) => {
                 let status = source.get_exit_status(),
                     [, stdout, stderr] = source.communicate_utf8_finish(resource);
 
@@ -134,7 +124,7 @@ var Switch = class Switch {
                         stdout: stdout,
                         stderr: stderr,
                     });
-            }.bind(this));
+            });
         }
         catch(e) {
             if (typeof callback === 'function')
@@ -148,7 +138,7 @@ var Switch = class Switch {
     }
 
     /**
-     * File with prime status
+     * File with prime status.
      *
      * @type {String}
      */
@@ -158,8 +148,8 @@ var Switch = class Switch {
 
     /**
      * Property gpu getter:
-     * if `nvidia-smi -q` shell command exit code
-     * is non-zero, 'nvidia' is not in use
+     * if `nvidia-smi -q` shell command exit code is non-zero, 'nvidia' is not
+     * in use.
      *
      * @return {String}
      */
@@ -180,7 +170,7 @@ var Switch = class Switch {
 
     /**
      * Property query getter:
-     * shell command `prime-select query` result
+     * shell command `prime-select query` result.
      *
      * @return {String}
      */
@@ -196,7 +186,7 @@ var Switch = class Switch {
 
     /**
      * Property default query getter:
-     * query on system init
+     * query on system init.
      *
      * @return {String}
      */
@@ -213,40 +203,39 @@ var Switch = class Switch {
     }
 
     /**
-     * Get switches (valid arguments for
-     * switch command)
+     * Get switches (valid arguments for switch command).
      *
      * @return {Array}
      */
     get switches() {
         if (this._switches)
-            return this._switches.slice();;
+            return this._switches.slice();
 
-        let command = this.command('select'),
-            exec = this._shellExec(command),
-            output = exec.stdout || exec.stderr,
-            args = output.trim().split(' ').pop().split('|');
-        if (args.length)
-            this._switches = args.filter((item) => {
-                return item !== 'query';
-            });
-        else
-            this._switches = [ 'nvidia', 'intel' ];
+        let command = this.command('select');
+        if (command) {
+            let exec = this._shellExec(command),
+                output = exec.stdout || exec.stderr,
+                args = output.trim().split(' ').pop().split('|');
+            if (args.length)
+                this._switches = args.filter(item => item !== 'query');
+            else
+                this._switches = [ 'nvidia', 'intel' ];
+        }
+        else {
+            this._switches = [];
+        }
 
         return this.switches;
     }
 
     /**
      * Does sysem need restarting:
-     * we store query value on initialization,
-     * and if this value differs from current
-     * one means that we need restart.
+     * we store query value on initialization, and if this value differs from
+     * current one means that we need restart.
 
      * Warning:
-     * This may not be 100% accurate. User can
-     * switch gpu (without restart) and then
-     * install extension. In this case
-     * defaultQuery variable will be
+     * This may not be 100% accurate. User can switch gpu (without restart)
+     * and then install extension. In this case defaultQuery variable will be
      * invalid.
      *
      * @return {Boolean}
@@ -256,7 +245,7 @@ var Switch = class Switch {
     }
 
     /**
-     * Get shell command
+     * Get shell command.
      *
      * @param  {String} cmd sudo|select|management|settings
      * @return {String}     null on fail
@@ -269,9 +258,8 @@ var Switch = class Switch {
     }
 
     /**
-     * GPU switch
-     * shell command `prime-select $gpu`, where
-     * gpu is 'intel' or 'nvidia'
+     * GPU switch:
+     * shell command `prime-select $gpu`, where gpu is 'intel' or 'nvidia'.
      *
      * @param  {String}   gpu    intel|nvidia
      * @param  {Function} logout (optional)
@@ -294,7 +282,7 @@ var Switch = class Switch {
              + ' ' + gpu
 
         this._log('switching to ' + gpu);
-        this._shellExecAsync(cmd, function(e) {
+        this._shellExecAsync(cmd, (e) => {
             if (!e.status)
                 this._log('switched to ' + gpu);
             else
@@ -308,11 +296,11 @@ var Switch = class Switch {
                     gpu: gpu,
                     result: !e.status,
                 });
-        }.bind(this));
+        });
     }
 
     /**
-     * Start nvidia-settings
+     * Start nvidia-settings.
      *
      * @return {Void}
      */
@@ -325,7 +313,7 @@ var Switch = class Switch {
     }
 
     /**
-     * Start file monitoring
+     * Start file monitoring.
      *
      * @return {Void}
      */
@@ -338,7 +326,7 @@ var Switch = class Switch {
     }
 
     /**
-     * Stop file monitoring
+     * Stop file monitoring.
      *
      * @return {Void}
      */
@@ -351,7 +339,7 @@ var Switch = class Switch {
     }
 
     /**
-     * File monitor change event handler
+     * File monitor change event handler.
      *
      * @param  {Object} file
      * @param  {Object} otherFile
@@ -363,7 +351,6 @@ var Switch = class Switch {
     }
 
     /* --- */
-
 };
 
 Signals.addSignalMethods(Switch.prototype);

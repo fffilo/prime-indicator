@@ -3,5 +3,6 @@
 .prime-indicator-prefs-input { padding: 0.5em; }
 .prime-indicator-prefs-page { padding: 2em; }
 .prime-indicator-prefs-page-about-title { padding-bottom: 2em; font-weight: bold; }
+.prime-indicator-prefs-page-about-icon { min-height: 64px; min-width: 64px; }
 .prime-indicator-prefs-page-about-description { padding: 2em; }
-.prime-indicator-prefs-page-about-license { font-size: 0.8em; padding-top: 2em; }
+.prime-indicator-prefs-page-about-license { font-size: 0.8em; padding-top: 2.5em; }

@@ -1,39 +1,36 @@
 /* -*- mode: js2; js2-basic-offset: 4; indent-tabs-mode: nil -*- */
 
-// strict mode
+// Strict mode.
 'use strict';
 
-// import modules
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+// Import modules.
+const Me = imports.misc.extensionUtils.getCurrentExtension();
 const Translation = Me.imports.translation;
-const Icons = Me.imports.icons;
 const Menu = Me.imports.menu;
 
 /**
- * Global widget object
+ * Global widget object.
  *
  * @type {Object}
  */
 let widget = null;
 
 /**
- * Extension initialization
+ * Extension initialization.
  *
  * @param  {Object} extensionMeta
  * @return {Void}
  */
-function init(extensionMeta) {
+var init = (extensionMeta) => {
     Translation.init();
-    Icons.init();
 }
 
 /**
- * Extension enable
+ * Extension enable.
  *
  * @return {Void}
  */
-function enable() {
+var enable = () => {
     if (widget)
         return;
 
@@ -41,11 +38,11 @@ function enable() {
 }
 
 /**
- * Extension disable
+ * Extension disable.
  *
  * @return {Void}
  */
-function disable() {
+var disable = () => {
     if (!widget)
         return;
 
