@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 9 - 2021-11-04
+### Changed
+- Refactor
+
 ## Version 8 - 2021-11-04
 ### Changed
 - Port extension to Gnome Shell 40

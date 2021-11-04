@@ -4,8 +4,7 @@
 'use strict';
 
 // Import modules.
-const Mainloop = imports.mainloop;
-const GObject = imports.gi.GObject;
+const {GLib, GObject} = imports.gi;
 const Main = imports.ui.main;
 const PopupMenu = imports.ui.popupMenu;
 const GnomeSession = imports.misc.gnomeSession;
@@ -37,6 +36,7 @@ var Widget = GObject.registerClass({
         this.switch.connect('gpu-change', this._handlePrimeGpuChange.bind(this));
         this.switch.monitor();
 
+        this._timeoutSourceId = null;
         this._pending = false;
         this._loggingOut = false;
 
@@ -108,8 +108,11 @@ var Widget = GObject.registerClass({
         this.switch.destroy();
         this.settings.run_dispose();
 
+        this._delayClear();
+
         delete this._loggingOut;
         delete this._pending;
+        delete this._timeoutSourceId
         delete this._switch;
         delete this._settings;
 
@@ -183,6 +186,42 @@ var Widget = GObject.registerClass({
     }
 
     /**
+     * Clear any main loop timeout sources.
+     *
+     * @return {Void}
+     */
+    _delayClear() {
+        if (!this._timeoutSourceId)
+            return;
+
+        GLib.Source.remove(this._timeoutSourceId);
+        this._timeoutSourceId = null;
+    }
+
+    /**
+     * Execute callback with delay.
+     *
+     * @param  {Number}   timeout
+     * @param  {Function} callback
+     * @param  {...Mixed} args
+     * @return {Void}
+     */
+    _delayExecute(timeout, callback, ...args) {
+        if (this._timeoutSourceId)
+            throw new Error('Timeout already in use');
+
+        this._timeoutSourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, timeout, () => {
+            this._timeoutSourceId = null;
+
+            if (typeof callback === 'function')
+                callback.apply(this, args);
+
+            // Stop repeating.
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    /**
      * Refresh widget menu:
      * set items sensitivity and show/hide logout message.
      *
@@ -242,12 +281,7 @@ var Widget = GObject.registerClass({
             this._refresh();
 
             // Logout with delay.
-            Mainloop.timeout_add(1000, () => {
-                this.logout();
-
-                // Stop repeating.
-                return false;
-            });
+            this._delayExecute(1000, this.logout.bind(this));
         });
     }
 
@@ -285,9 +319,7 @@ var Widget = GObject.registerClass({
 
         // Switch with delay, making sure that refresh occurs after aggregate
         // menu fadeout.
-        Mainloop.timeout_add(50, () => {
-            this._switchGpu(gpu);
-        });
+        this._delayExecute(50, this._switchGpu.bind(this), gpu);
     }
 
     /**
