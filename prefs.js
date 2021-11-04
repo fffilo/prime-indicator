@@ -39,6 +39,8 @@ const Widget = GObject.registerClass({
     _init() {
         super._init({ orientation: Gtk.Orientation.VERTICAL, });
 
+        this._timeoutSourceId = null;
+
         this._settings = ExtensionUtils.getSettings();
         //this.settings.connect('changed', this._handle_settings.bind(this));
 
@@ -64,7 +66,10 @@ const Widget = GObject.registerClass({
     destroy() {
         this.settings.run_dispose();
 
+        this._delayClear();
+
         delete this._settings;
+        delete this._timeoutSourceId
 
         super.destroy();
     }
@@ -209,6 +214,42 @@ const Widget = GObject.registerClass({
     }
 
     /**
+     * Clear any main loop timeout sources.
+     *
+     * @return {Void}
+     */
+    _delayClear() {
+        if (!this._timeoutSourceId)
+            return;
+
+        GLib.Source.remove(this._timeoutSourceId);
+        this._timeoutSourceId = null;
+    }
+
+    /**
+     * Execute callback with delay.
+     *
+     * @param  {Number}   timeout
+     * @param  {Function} callback
+     * @param  {...Mixed} args
+     * @return {Void}
+     */
+    _delayExecute(timeout, callback, ...args) {
+        if (this._timeoutSourceId)
+            throw new Error('Timeout already in use');
+
+        this._timeoutSourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, timeout, () => {
+            this._timeoutSourceId = null;
+
+            if (typeof callback === 'function')
+                callback.apply(this, args);
+
+            // Stop repeating.
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    /**
      * Input widget change event handler.
      *
      * @param  {Object} actor
@@ -230,6 +271,13 @@ const Widget = GObject.registerClass({
      */
     _handleButtonChange(actor, event) {
         this._shellExecAsync('nvidia-settings');
+
+        // This can last second or two, so let's disable widget for a moment
+        // to prevent multiple button clicks.
+        actor.enabled = false;
+        this._delayExecute(1250, () => {
+            actor.enabled = true;
+        });
     }
 
     /* --- */
