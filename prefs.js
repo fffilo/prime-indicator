@@ -2,11 +2,10 @@
 
 // Import modules.
 const {GObject, Gtk, Gdk, GdkPixbuf, GLib} = imports.gi;
-const Me = imports.misc.extensionUtils.getCurrentExtension();
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
 const Icons = Me.imports.icons;
-const Settings = Me.imports.settings;
-const Translation = Me.imports.translation;
-const _ = Translation.translate;
+const _ = imports.gettext.gettext;
 
 /**
  * Extension preferences initialization.
@@ -14,7 +13,7 @@ const _ = Translation.translate;
  * @return {Void}
  */
 var init = () => {
-    Translation.init();
+    ExtensionUtils.initTranslations();
 }
 
 /**
@@ -40,7 +39,7 @@ const Widget = GObject.registerClass({
     _init() {
         super._init({ orientation: Gtk.Orientation.VERTICAL, });
 
-        this._settings = Settings.settings();
+        this._settings = ExtensionUtils.getSettings();
         //this.settings.connect('changed', this._handle_settings.bind(this));
 
         let provider = new Gtk.CssProvider();

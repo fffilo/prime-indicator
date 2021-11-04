@@ -13,9 +13,7 @@ const Me = ExtensionUtils.getCurrentExtension();
 const Prime = Me.imports.prime;
 const Icons = Me.imports.icons;
 const Log = Me.imports.log;
-const Settings = Me.imports.settings;
-const Translation = Me.imports.translation;
-const _ = Translation.translate;
+const _ = imports.gettext.gettext;
 
 /**
  * Widget extends PopupMenu.PopupSubMenuMenuItem.
@@ -31,7 +29,7 @@ var Widget = GObject.registerClass({
     _init() {
         super._init(_("Prime Select"), true);
 
-        this._settings = Settings.settings();
+        this._settings = ExtensionUtils.getSettings();
         this.settings.connect('changed', this._handleSettings.bind(this));
 
         this._switch = new Prime.Switch();

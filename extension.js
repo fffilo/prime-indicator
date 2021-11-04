@@ -4,8 +4,8 @@
 'use strict';
 
 // Import modules.
-const Me = imports.misc.extensionUtils.getCurrentExtension();
-const Translation = Me.imports.translation;
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
 const Menu = Me.imports.menu;
 
 /**
@@ -22,7 +22,7 @@ let widget = null;
  * @return {Void}
  */
 var init = (extensionMeta) => {
-    Translation.init();
+    ExtensionUtils.initTranslations();
 }
 
 /**
