@@ -1,7 +1,7 @@
 INSTALL_PATH = ~/.local/share/gnome-shell/extensions
 INSTALL_NAME = prime-indicator@gnome-shell-exstensions.fffilo.github.com
 BUILD_DIR = _build
-FILES = assets/ CHANGELOG.md convenience.js COPYING extension.js icons.js log.js menu.js metadata.json prefs.css prefs.js prime.js README.md schemas/ settings.js translation.js
+FILES = assets/ CHANGELOG.md COPYING extension.js icons.js log.js menu.js metadata.json prefs.css prefs.js prime.js README.md schemas/
 
 install: build
 	rm -rf $(INSTALL_PATH)/$(INSTALL_NAME)
