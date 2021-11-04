@@ -40,6 +40,8 @@ var Widget = GObject.registerClass({
         this._pending = false;
         this._loggingOut = false;
 
+        this.icon.set_gicon(new Icons.Icon(Icons.DEFAULT));
+
         this._ui = {};
         let switches = this.switch.switches;
         if (switches.includes('intel')) {
@@ -82,10 +84,7 @@ var Widget = GObject.registerClass({
         //});
         //this.menu.addMenuItem(this._ui.preferences);
 
-        this.icon.set_gicon(new Icons.Icon(Icons.DEFAULT));
-        let items = Main.panel.statusArea.aggregateMenu.menu._getMenuItems();
-        Main.panel.statusArea.aggregateMenu.menu.addMenuItem(this, items.length - 1);
-
+        this._attach();
         this._refresh();
 
         if (!this.switch.command('sudo'))
@@ -174,6 +173,16 @@ var Widget = GObject.registerClass({
     }
 
     /**
+     * Attach widget to aggregate menu.
+     *
+     * @return {Void}
+     */
+    _attach() {
+        let items = Main.panel.statusArea.aggregateMenu.menu._getMenuItems();
+        Main.panel.statusArea.aggregateMenu.menu.addMenuItem(this, items.length - 1);
+    }
+
+    /**
      * Refresh widget menu:
      * set items sensitivity and show/hide logout message.
      *
@@ -203,6 +212,43 @@ var Widget = GObject.registerClass({
         this._ui.messagePending.actor.visible = loggingOut ? false : pending;
         this._ui.messageRestart.actor.visible = (loggingOut || pending) ? false : isRestartNeeded;
         this._ui.messageLoggingOut.actor.visible = loggingOut;
+    }
+
+    /**
+     * Switch GPU.
+     *
+     * @param  {String} gpu
+     * @return {Void}
+     */
+    _switchGpu(gpu) {
+        this._pending = true;
+        this._refresh();
+
+        this.switch.switch(gpu, (e) => {
+            let doRestart = true
+                && e.result
+                && this.settings.get_boolean('auto-logout')
+                && this.switch.isRestartNeeded;
+            if (!doRestart) {
+                this._pending = false;
+                this._refresh();
+
+                return;
+            }
+
+            this._log('logout on gpu switch enabled, logging out');
+            this._pending = false;
+            this._loggingOut = true;
+            this._refresh();
+
+            // Logout with delay.
+            Mainloop.timeout_add(1000, () => {
+                this.logout();
+
+                // Stop repeating.
+                return false;
+            });
+        });
     }
 
     /**
@@ -237,33 +283,10 @@ var Widget = GObject.registerClass({
         else
             throw new Error('Unknown GPU switch');
 
-        this._pending = true;
-        this._refresh();
-
-        this.switch.switch(gpu, (e) => {
-            let doRestart = true
-                && e.result
-                && this.settings.get_boolean('auto-logout')
-                && this.switch.isRestartNeeded;
-            if (!doRestart) {
-                this._pending = false;
-                this._refresh();
-
-                return;
-            }
-
-            this._log('logout on gpu switch enabled, logging out');
-            this._pending = false;
-            this._loggingOut = true;
-            this._refresh();
-
-            // Logout with delay.
-            Mainloop.timeout_add(1000, () => {
-                this.logout();
-
-                // Stop repeating.
-                return false;
-            });
+        // Switch with delay, making sure that refresh occurs after aggregate
+        // menu fadeout.
+        Mainloop.timeout_add(50, () => {
+            this._switchGpu(gpu);
         });
     }
 
