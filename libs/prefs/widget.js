@@ -5,7 +5,7 @@ const {GObject, Gtk, Gdk, GdkPixbuf, GLib} = imports.gi;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Icons = Me.imports.libs.extension.icons;
-const _ = ExtensionUtils.gettext || imports.gettext.gettext;
+const _ = imports.gettext.domain(Me.metadata['gettext-domain']).gettext;
 
 /**
  * Widget extends Gtk.Box.
@@ -23,11 +23,11 @@ var Widget = GObject.registerClass({
 
         this._timeoutSourceId = null;
 
-        this._settings = ExtensionUtils.getSettings();
+        this._settings = ExtensionUtils.getSettings(Me.metadata['settings-schema']);
         //this.settings.connect('changed', this._handle_settings.bind(this));
 
         let provider = new Gtk.CssProvider();
-        provider.load_from_path(Me.dir.get_path() + '/prefs.css');
+        provider.load_from_path(`${Me.path}/libs/prefs/widget.css`);
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
         let notebook = new Gtk.Notebook();

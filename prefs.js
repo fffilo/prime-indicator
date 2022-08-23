@@ -10,7 +10,7 @@ const Widget = Me.imports.libs.prefs.widget;
  * @return {Void}
  */
 var init = () => {
-    ExtensionUtils.initTranslations();
+    ExtensionUtils.initTranslations(Me.metadata['gettext-domain']);
 }
 
 /**
