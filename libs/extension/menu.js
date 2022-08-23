@@ -10,9 +10,9 @@ const PopupMenu = imports.ui.popupMenu;
 const GnomeSession = imports.misc.gnomeSession;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
-const Prime = Me.imports.prime;
-const Icons = Me.imports.icons;
-const Log = Me.imports.log;
+const Prime = Me.imports.libs.extension.prime;
+const Icons = Me.imports.libs.extension.icons;
+const Log = Me.imports.libs.extension.log;
 const _ = ExtensionUtils.gettext || imports.gettext.gettext;
 
 /**

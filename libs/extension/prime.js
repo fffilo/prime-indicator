@@ -7,7 +7,7 @@
 const {GLib, Gio} = imports.gi;
 const Signals = imports.signals;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
-const Log = Me.imports.log;
+const Log = Me.imports.libs.extension.log;
 
 /**
  * Switch:

@@ -23,7 +23,7 @@ var DEFAULT = 'prime-menu-default-symbolic';
  * @return {String}
  */
 var path = (filename=null) => {
-    let dirname =  `${Me.path}/assets`,
+    let dirname =  `${Me.path}/icons`,
         suffix = filename ? `/${filename}` : '';
 
     return dirname + suffix;

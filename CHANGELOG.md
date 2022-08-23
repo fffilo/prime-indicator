@@ -2,6 +2,12 @@
 
 ## Version 10 - 2022-08-23
 ### Changed
+- Port extension to Gnome Shell 42
+- Preferences redesign
+- Directory structure
+
+## Version 10 - 2022-08-23
+### Changed
 - Port extension to Gnome Shell 41
 
 ## Version 9 - 2021-11-04

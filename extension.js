@@ -6,7 +6,7 @@
 // Import modules.
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
-const Menu = Me.imports.menu;
+const Menu = Me.imports.libs.extension.menu;
 
 /**
  * Global widget object.
@@ -22,7 +22,7 @@ let widget = null;
  * @return {Void}
  */
 var init = (extensionMeta) => {
-    ExtensionUtils.initTranslations();
+    ExtensionUtils.initTranslations(Me.metadata['gettext-domain']);
 }
 
 /**
