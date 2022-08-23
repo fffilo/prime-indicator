@@ -1,43 +1,33 @@
 /* -*- mode: js2; js2-basic-offset: 4; indent-tabs-mode: nil -*- */
 
 // Import modules.
-const {GObject, Gtk, Gdk, GdkPixbuf, GLib} = imports.gi;
+const {Gtk, Gdk, GLib, Gio} = imports.gi;
+const Mainloop = imports.mainloop;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const Icons = Me.imports.libs.extension.icons;
 const _ = imports.gettext.domain(Me.metadata['gettext-domain']).gettext;
 
 /**
- * Widget extends Gtk.Box.
+ * Preferences widget.
  */
-var Widget = GObject.registerClass({
-    GTypeName: 'PrimeIndicatorPrefsWidget',
-}, class Widget extends Gtk.Box {
+var Widget = class Widget {
     /**
      * Constructor.
      *
+     * @param  {ExtensionPrefsDialog} window
      * @return {Void}
      */
-    _init() {
-        super._init({ orientation: Gtk.Orientation.VERTICAL, });
-
-        this._timeoutSourceId = null;
-
+    constructor(window) {
+        this._window = window;
         this._settings = ExtensionUtils.getSettings(Me.metadata['settings-schema']);
-        //this.settings.connect('changed', this._handle_settings.bind(this));
+        this._builder = Gtk.Builder.new_from_file(`${Me.path}/libs/prefs/widget.ui`);
 
-        let provider = new Gtk.CssProvider();
-        provider.load_from_path(`${Me.path}/libs/prefs/widget.css`);
-        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        this._loadStylesheet();
+        this._includeIcons();
+        this._buildUI();
 
-        let notebook = new Gtk.Notebook();
-        notebook.set_vexpand(true);
-        notebook.append_page(this._createPageSettings(), new Gtk.Label({ label: _("Settings"), }));
-        notebook.append_page(this._createPageAbout(), new Gtk.Label({ label: _("About"), }));
-        this.append(notebook);
-
-        if (typeof this.show_all === 'function')
-            this.show_all();
+        this.window.connect('close-request', this._handleWindowCloseRequest.bind(this));
     }
 
     /**
@@ -46,14 +36,24 @@ var Widget = GObject.registerClass({
      * @return {Void}
      */
     destroy() {
+        if (this.__nVidiaSettingsInterval)
+            Mainloop.source_remove(this.__nVidiaSettingsInterval);
+
         this.settings.run_dispose();
 
-        this._delayClear();
-
+        delete this.__nVidiaSettingsInterval;
+        delete this._builder;
         delete this._settings;
-        delete this._timeoutSourceId
+        delete this._window;
+    }
 
-        super.destroy();
+    /**
+     * Window property getter.
+     *
+     * @return {ExtensionPrefsDialog}
+     */
+    get window() {
+        return this._window;
     }
 
     /**
@@ -66,121 +66,193 @@ var Widget = GObject.registerClass({
     }
 
     /**
-     * Create new page.
+     * Builder property getter.
      *
-     * @return {Box}
+     * @return {Gtk.Builder}
      */
-    _createNewPage() {
-        let page = new Box();
-        page.expand = true;
-        page.get_style_context().add_class('prime-indicator-prefs-page');
-
-        return page;
+    get builder() {
+        return this._builder;
     }
 
     /**
-     * Create settings page.
+     * Load stylesheet from CSS file.
      *
-     * @return {Box}
-     */
-    _createPageSettings() {
-        let page = this._createNewPage();
-        page.get_style_context().add_class('prime-indicator-prefs-page-settings');
-
-        let input = new InputSwitch('auto-logout', this.settings.get_boolean('auto-logout'), _("Logout on GPU switch"), _("Logout on GPU switch"));
-        input.connect('changed', this._handleInputChange.bind(this));
-        page.actor.append(input);
-
-        input = new InputButton(_("Open"), _("NVIDIA Settings"));
-        input.connect('changed', this._handleButtonChange.bind(this));
-        page.actor.append(input);
-
-        return page;
-    }
-
-    /**
-     * Create about page.
-     *
-     * @return {Box}
-     */
-    _createPageAbout() {
-        let page = this._createNewPage();
-        page.get_style_context().add_class('prime-indicator-prefs-page-about');
-
-        let item = new Label({ label: Me.metadata.name, });
-        item.get_style_context().add_class('prime-indicator-prefs-page-about-title');
-        page.actor.append(item);
-
-        let ico = GdkPixbuf.Pixbuf.new_from_file_at_scale(Me.path + '/assets/%s.svg'.format(Icons.DEFAULT), 64, 64, null);
-        item = Gtk.Image.new_from_pixbuf(ico);
-        item.get_style_context().add_class('prime-indicator-prefs-page-about-icon');
-        page.actor.append(item);
-
-        item = new Label({ label: Me.metadata['description-html'] || Me.metadata.description, });
-        item.get_style_context().add_class('prime-indicator-prefs-page-about-description');
-        page.actor.append(item);
-
-        item = new Label({ label: _("Version") + ': ' + Me.metadata.version, });
-        item.get_style_context().add_class('prime-indicator-prefs-page-about-version');
-        page.actor.append(item);
-
-        item = new Label({ label: Me.metadata['original-author-html'] || Me.metadata['original-author'], });
-        item.get_style_context().add_class('prime-indicator-prefs-page-about-author');
-        page.actor.append(item);
-
-        item = new Label({ label: '<a href="' + Me.metadata.url + '">' + Me.metadata.url + '</a>', });
-        item.get_style_context().add_class('prime-indicator-prefs-page-about-webpage');
-        page.actor.append(item);
-
-        item = new Label({ label: Me.metadata['license-html'] || Me.metadata.license, });
-        item.get_style_context().add_class('prime-indicator-prefs-page-about-license');
-        page.actor.append(item);
-
-        return page;
-    }
-
-    /**
-     * `which $command` result.
-     *
-     * @param  {String} command
-     * @return {Mixed}
-     */
-    _which(command) {
-        let result = this._shellExec('which ' + command);
-        if (result)
-            result = result.trim();
-
-        return result;
-    }
-
-    /**
-     * Shell execute command.
-     *
-     * @param  {String} command
-     * @return {Mixed}
-     */
-    _shellExec(command) {
-        try {
-            let [ok, output, error, status] = GLib.spawn_sync(null, command.split(' '), null, GLib.SpawnFlags.SEARCH_PATH, null);
-            if (ok) {
-                if (output instanceof Uint8Array)
-                    output = String.fromCharCode.apply(null, output);
-
-                return output.toString().trim();
-            }
-        }
-        catch(e) {
-            // pass
-        }
-
-        return null;
-    }
-
-    /**
-     * Shell execute command.
-     *
-     * @param  {String} command
      * @return {Void}
+     */
+    _loadStylesheet() {
+        const provider = new Gtk.CssProvider();
+        provider.load_from_path(`${Me.path}/libs/prefs/widget.css`);
+
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+    }
+
+    /**
+     * Include icons.
+     *
+     * @return {Void}
+     */
+    _includeIcons() {
+        Icons.include();
+    }
+
+    /**
+     * Build UI.
+     *
+     * @return {Void}
+     */
+    _buildUI() {
+        this._buildUIWindow();
+        this._buildUIAddPages();
+        this._buildUISettings();
+        this._buildUIActions();
+        this._buildUIAbout();
+    }
+
+    /**
+     * Build UI:
+     * set window size and enable search.
+     *
+     * @return {Void}
+     */
+    _buildUIWindow() {
+        let width = this.settings.get_int('prefs-default-width'),
+            height = this.settings.get_int('prefs-default-height');
+        if (width && height)
+            this.window.set_default_size(width, height);
+
+        this.window.set_search_enabled(true);
+    }
+
+    /**
+     * Build UI:
+     * add all pages to window.
+     *
+     * @return {Void}
+     */
+    _buildUIAddPages() {
+        this.window.add(this._findChild('page-settings'));
+        this.window.add(this._findChild('page-about'));
+    }
+
+    /**
+     * Build UI:
+     * sync settings and its widgets.
+     *
+     * @return {Void}
+     */
+    _buildUISettings() {
+        this._registerSettingWidget('auto-logout');
+    }
+
+    /**
+     * Build UI:
+     * bind action widgets.
+     *
+     * @return {Void}
+     */
+    _buildUIActions() {
+        this._findChild('action-nvidia-settings').connect('clicked', this._handleNVidiaSettingsButtonClick.bind(this));
+    }
+
+    /**
+     * Build UI:
+     * sync about page with metadata.
+     *
+     * @return {Void}
+     */
+    _buildUIAbout() {
+        let url = this._getMetadataProperty('url'),
+            webpage = `<a href="${url}">${url}</a>`,
+            gnomeVersion = this._getGnomeVersion(),
+            sessionType = this._getSessionType();
+
+        this._findChild('about-icon').set_from_icon_name(Icons.DEFAULT);
+        this._findChild('about-title').set_label(this._getMetadataProperty('name'));
+        this._findChild('about-description').set_label(this._getMetadataProperty('description-html', 'description'));
+        this._findChild('about-version').set_label(this._getMetadataProperty('version'));
+        this._findChild('about-gnome').set_label(gnomeVersion);
+        this._findChild('about-session').set_label(sessionType);
+        this._findChild('about-author').set_label(this._getMetadataProperty('original-author-html', 'original-author'));
+        this._findChild('about-webpage').set_label(webpage);
+        this._findChild('about-license').set_label(this._getMetadataProperty('license-html', 'license'));
+    }
+
+    /**
+     * Register setting widget:
+     * find widget, set its value (from settings) and bind change to store
+     * value in our schema.
+     *
+     * @param  {String} property
+     * @return {Void}
+     */
+    _registerSettingWidget(property) {
+        const widget = this._findChild('setting-' + property);
+        if (!widget)
+            throw 'Widget: can not register setting widget (unknown property).';
+
+        if (widget instanceof Gtk.Switch) {
+            widget.set_active(this.settings.get_boolean(property));
+            this.settings.bind(property, widget, 'active', Gio.SettingsBindFlags.DEFAULT);
+        }
+        else
+            throw 'Widget: can not register setting (unsupported widget type).';
+    }
+
+    /**
+     * Find child (builder object) by name.
+     *
+     * @param  {String}          name
+     * @return {Gtk.Widget|Null}
+     */
+    _findChild(name) {
+        return this.builder.get_object(name);
+    }
+
+    /**
+     * Label markup fix:
+     * since Gtk.Label markup doesn't support <br> tags, we're gonna replace
+     * all line break tags with newlines.
+     *
+     * @param  {String} text
+     * @return {String}
+     */
+    _labelMarkupFix(text) {
+        return text.replace(/<br\s*(?:\/?)\s*>/g, '\n');
+    }
+
+    /**
+     * Get first truthy property from metadata.
+     *
+     * @param  {...String} props
+     * @return {String}
+     */
+    _getMetadataProperty(...props) {
+        return props.reduce((carry, item) => carry || this._labelMarkupFix(Me.metadata[item] || ''), '');
+    }
+
+    /**
+     * Get GNOME version.
+     *
+     * @return {String}
+     */
+    _getGnomeVersion() {
+        return imports.misc.config.PACKAGE_VERSION || _("unknown");
+    }
+
+    /**
+     * Get session type (wayland, X11 or unknown).
+     *
+     * @return {String}
+     */
+    _getSessionType() {
+        return GLib.getenv('XDG_SESSION_TYPE') || _("unknown");
+    }
+
+    /**
+     * Shell execute command.
+     *
+     * @param  {String}      command
+     * @return {Number|Null}
      */
     _shellExecAsync(command) {
         try {
@@ -196,331 +268,44 @@ var Widget = GObject.registerClass({
     }
 
     /**
-     * Clear any main loop timeout sources.
+     * Window close request event handler:
+     * store window size to schema and destroy instance.
      *
+     * @param  {ExtensionPrefsDialog} widget
      * @return {Void}
      */
-    _delayClear() {
-        if (!this._timeoutSourceId)
-            return;
+    _handleWindowCloseRequest(widget) {
+        if (widget.default_width != this.settings.get_int('prefs-default-width'))
+            this.settings.set_int('prefs-default-width', widget.default_width);
+        if (widget.default_height != this.settings.get_int('prefs-default-height'))
+            this.settings.set_int('prefs-default-height', widget.default_height);
 
-        GLib.Source.remove(this._timeoutSourceId);
-        this._timeoutSourceId = null;
+        this.destroy();
     }
 
     /**
-     * Execute callback with delay.
+     * Global status prune button click event handler:
+     * execute `vagrant global-status --prune`.
      *
-     * @param  {Number}   timeout
-     * @param  {Function} callback
-     * @param  {...Mixed} args
+     * @param  {Gtk.Button} widget
      * @return {Void}
      */
-    _delayExecute(timeout, callback, ...args) {
-        if (this._timeoutSourceId)
-            throw new Error('Timeout already in use');
-
-        this._timeoutSourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, timeout, () => {
-            this._timeoutSourceId = null;
-
-            if (typeof callback === 'function')
-                callback.apply(this, args);
-
-            // Stop repeating.
-            return GLib.SOURCE_REMOVE;
-        });
-    }
-
-    /**
-     * Input widget change event handler.
-     *
-     * @param  {Object} actor
-     * @param  {Object} event
-     * @return {Void}
-     */
-    _handleInputChange(actor, event) {
-        let old = this.settings['get_' + event.type](event.key);
-        if (old != event.value)
-            this.settings['set_' + event.type](event.key, event.value);
-    }
-
-    /**
-     * Button NVIDIA Settings click event handler.
-     *
-     * @param  {Object} actor
-     * @param  {Object} event
-     * @return {Void}
-     */
-    _handleButtonChange(actor, event) {
+    _handleNVidiaSettingsButtonClick(widget) {
         this._shellExecAsync('nvidia-settings');
 
         // This can last second or two, so let's disable widget for a moment
         // to prevent multiple button clicks.
-        actor.enabled = false;
-        this._delayExecute(1250, () => {
-            actor.enabled = true;
-        });
+        if (this.__nVidiaSettingsInterval)
+            Mainloop.source_remove(this.__nVidiaSettingsInterval);
+        this.__nVidiaSettingsInterval = Mainloop.timeout_add(2500, () => {
+            widget.set_sensitive(true);
+            delete this.__nVidiaSettingsInterval;
+
+            return GLib.SOURCE_REMOVE;
+        }, null);
+
+        widget.set_sensitive(false);
     }
 
     /* --- */
-});
-
-/**
- * Box extends Gtk.Frame:
- * used so we can use padding property in css.
- */
-const Box = GObject.registerClass({
-    GTypeName: 'PrimeIndicatorPrefsBox',
-}, class Box extends Gtk.Frame {
-    /**
-     * Constructor.
-     *
-     * @param  {Object} options (optional)
-     * @return {Void}
-     */
-    _init() {
-        super._init();
-
-        this.actor = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, });
-        this.set_child(this.actor);
-
-        this.get_style_context().add_class('prime-indicator-prefs-box');
-    }
-
-    /* --- */
-});
-
-/**
- * Label extends Gtk.Label:
- * just a common Gtk.Label object with markup and line wrap.
- */
-const Label = GObject.registerClass({
-    GTypeName: 'PrimeIndicatorPrefsLabel',
-}, class Label extends Gtk.Label {
-    /**
-     * Constructor.
-     *
-     * @param  {Object} options (optional)
-     * @return {Void}
-     */
-    _init(options) {
-        let o = options || {};
-        if (!('label' in options)) o.label = 'undefined';
-
-        super._init(o);
-        this.set_markup(this.get_text());
-        this.wrap = true;
-        this.set_justify(Gtk.Justification.CENTER);
-
-        this.get_style_context().add_class('prime-indicator-prefs-label');
-    }
-
-    /* --- */
-});
-
-/**
- * Input extends Box:
- * Box object with label and widget for editing settings.
- *
- * @param  {Object}
- * @return {Object}
- */
-const Input = GObject.registerClass({
-    GTypeName: 'PrimeIndicatorPrefsInput',
-    Signals: {
-        changed: {
-            param_types: [ GObject.TYPE_OBJECT ],
-        },
-    },
-}, class Input extends Box {
-    /**
-     * Constructor.
-     *
-     * @param  {String} key
-     * @param  {String} text
-     * @param  {String} tooltip
-     * @return {Void}
-     */
-    _init(key, text, tooltip) {
-        super._init();
-        this.actor.set_orientation(Gtk.Orientation.HORIZONTAL);
-
-        let label = new Gtk.Label({ label: text, xalign: 0, tooltip_text: tooltip || '' });
-        label.set_hexpand(true);
-        this.actor.append(label);
-
-        this._key = key;
-        this._label = label;
-        this._widget = null;
-
-        this.get_style_context().add_class('prime-indicator-prefs-input');
-    }
-
-    /**
-     * Input change event handler.
-     *
-     * @param  {Object} widget
-     * @return {Void}
-     */
-    _handleChange(widget) {
-        let emit = new GObject.Object();
-        emit.key = this.key;
-        emit.value = this.value;
-        emit.type = this.type;
-
-        this.emit('changed', emit);
-    }
-
-    /**
-     * Type property getter.
-     *
-     * @return {String}
-     */
-    get type() {
-        return 'variant';
-    }
-
-    /**
-     * Key property getter.
-     *
-     * @return {String}
-     */
-    get key() {
-        return this._key;
-    }
-
-    /**
-     * Enabled property getter.
-     *
-     * @return {Boolean}
-     */
-    get enabled() {
-        return this._widget.is_sensitive();
-    }
-
-    /**
-     * Enabled property setter.
-     *
-     * @param  {Boolean} value
-     * @return {Void}
-     */
-    set enabled(value) {
-        this._widget.set_sensitive(value);
-    }
-
-    /**
-     * Value property getter.
-     *
-     * @return {Boolean}
-     */
-    get value() {
-        return this._widget.value;
-    }
-
-    /**
-     * Value property setter.
-     *
-     * @param  {Mixed} value
-     * @return {Void}
-     */
-    set value(value) {
-        this._widget.value = value;
-    }
-
-    /* --- */
-});
-
-/**
- * InputSwitch extends Input.
- */
-const InputSwitch = GObject.registerClass({
-    GTypeName: 'PrimeIndicatorPrefsInputSwitch',
-}, class InputSwitch extends Input {
-    /**
-     * Constructor.
-     *
-     * @return {Void}
-     */
-    _init(key, value, text, tooltip) {
-        super._init(key, text, tooltip);
-
-        this._widget = new Gtk.Switch({ active: value });
-        this._widget.connect('notify::active', this._handleChange.bind(this));
-        this.actor.append(this._widget);
-
-        this.get_style_context().add_class('prime-indicator-prefs-input-switch');
-    }
-
-    /**
-     * Type property getter.
-     *
-     * @return {String}
-     */
-    get type() {
-        return 'boolean';
-    }
-
-    /**
-     * Value property getter.
-     *
-     * @return {Boolean}
-     */
-    get value() {
-        return this._widget.active;
-    }
-
-    /**
-     * Value property setter.
-     *
-     * @param  {Boolean} value
-     * @return {Void}
-     */
-    set value(value) {
-        this._widget.active = value;
-    }
-
-    /* --- */
-});
-
-/**
- * InputButton extends Input.
- */
-const InputButton = GObject.registerClass({
-    GTypeName: 'PrimeIndicatorPrefsInputButton',
-}, class InputButton extends Input {
-    /**
-     * Constructor.
-     *
-     * @return {Void}
-     */
-    _init(label, text, tooltip) {
-        super._init(null, text, tooltip);
-
-        this._widget = new Gtk.Button({ label: label });
-        this._widget.connect('clicked', this._handleChange.bind(this));
-        this.actor.append(this._widget);
-
-        this.get_style_context().add_class('prime-indicator-prefs-input-button');
-    }
-
-    /**
-     * Value property getter.
-     *
-     * @return {Boolean}
-     */
-    get value() {
-        return null;
-    }
-
-    /**
-     * Value property setter.
-     *
-     * @param  {Boolean} value
-     * @return {Void}
-     */
-    set value(value) {
-        // pass
-    }
-
-    /* --- */
-});
+};

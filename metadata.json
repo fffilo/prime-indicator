@@ -3,7 +3,7 @@
     "description-html": "GNOME shell extension that adds Intel/NVIDIA GPU switch to aggregate menu.",
     "gettext-domain": "prime-indicator",
     "license": "GNU General Public License v3.0",
-    "license-html": "This program comes with ABSOLUTELY NO WARRANTY.\nSee the <a href=\"https:\/\/www.gnu.org\/licenses\/gpl-3.0.html\">GNU General Public License v3.0</a> for details.",
+    "license-html": "This program comes with ABSOLUTELY NO WARRANTY.<br />See the <a href=\"https:\/\/www.gnu.org\/licenses\/gpl-3.0.html\">GNU General Public License v3.0</a> for details.",
     "name": "Prime Indicator",
     "original-author": "Franjo Filo <fffilo666@gmail.com>",
     "original-author-html": "Franjo Filo &lt;<a href=\"mailto:fffilo666@gmail.com\">fffilo666@gmail.com</a>&gt;",

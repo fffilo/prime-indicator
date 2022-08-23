@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <object class="AdwWindow">
+        <child>
+            <object class="AdwPreferencesPage" id="page-settings">
+                <style>
+                    <class name="prime-indicator-prefs__page" />
+                    <class name="prime-indicator-prefs__page--settings" />
+                </style>
+                <property name="title" translatable="yes">Settings</property>
+                <property name="icon-name">preferences-system-symbolic</property>
+                <child>
+                    <object class="AdwPreferencesGroup">
+                        <property name="title" translatable="yes">General</property>
+                        <property name="visible">true</property>
+                        <property name="header-suffix">action-nvidia-settings</property>
+                        <child type="header-suffix">
+                            <object class="GtkButton" id="action-nvidia-settings">
+                                <child>
+                                    <object class="AdwButtonContent">
+                                        <property name="label" translatable="yes">NVIDIA Settings</property>
+                                        <property name="icon-name">application-x-executable-symbolic</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwActionRow">
+                                <property name="title" translatable="yes">Logout on GPU switch</property>
+                                <property name="activatable-widget">setting-auto-logout</property>
+                                <child>
+                                    <object class="GtkSwitch" id="setting-auto-logout">
+                                        <style>
+                                            <class name="prime-indicator-prefs__setting" />
+                                            <class name="prime-indicator-prefs__setting--auto-logout" />
+                                        </style>
+                                        <property name="active">True</property>
+                                        <property name="valign">center</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+        <child>
+            <object class="AdwPreferencesPage" id="page-about">
+                <style>
+                    <class name="prime-indicator-prefs__page" />
+                    <class name="prime-indicator-prefs__page--about" />
+                </style>
+                <property name="title" translatable="yes">About</property>
+                <property name="icon-name">dialog-information-symbolic</property>
+                <child>
+                    <object class="AdwPreferencesGroup">
+                        <child>
+                            <object class="GtkBox">
+                                <property name="orientation">vertical</property>
+                                <property name="valign">center</property>
+                                <child>
+                                    <object class="GtkLabel" id="about-title">
+                                        <style>
+                                            <class name="prime-indicator-prefs__about" />
+                                            <class name="prime-indicator-prefs__about--title" />
+                                        </style>
+                                        <property name="label">Me.metadata.name</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkBox">
+                                <property name="orientation">vertical</property>
+                                <property name="valign">center</property>
+                                <child>
+                                    <object class="GtkImage" id="about-icon">
+                                        <style>
+                                            <class name="prime-indicator-prefs__about" />
+                                            <class name="prime-indicator-prefs__about--icon" />
+                                        </style>
+                                        <property name="pixel-size">64</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkBox">
+                                <property name="orientation">vertical</property>
+                                <property name="valign">center</property>
+                                <child>
+                                    <object class="GtkLabel" id="about-description">
+                                        <style>
+                                            <class name="prime-indicator-prefs__about" />
+                                            <class name="prime-indicator-prefs__about--description" />
+                                        </style>
+                                        <property name="label">Me.metadata.description</property>
+                                        <property name="use-markup">true</property>
+                                        <property name="wrap">true</property>
+                                        <property name="justify">center</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwPreferencesGroup">
+                        <child>
+                            <object class="AdwActionRow">
+                                <property name="title" translatable="yes">Extension Version</property>
+                                <child>
+                                    <object class="GtkLabel" id="about-version">
+                                        <style>
+                                            <class name="prime-indicator-prefs__about" />
+                                            <class name="prime-indicator-prefs__about--version" />
+                                        </style>
+                                        <property name="label">Me.metadata.version</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwActionRow">
+                                <property name="title" translatable="yes">GNOME Version</property>
+                                <child>
+                                    <object class="GtkLabel" id="about-gnome">
+                                        <style>
+                                            <class name="prime-indicator-prefs__about" />
+                                            <class name="prime-indicator-prefs__about--gnome" />
+                                        </style>
+                                        <property name="label">unknown</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="AdwActionRow">
+                                <property name="title" translatable="yes">Session Type</property>
+                                <child>
+                                    <object class="GtkLabel" id="about-session">
+                                        <style>
+                                            <class name="prime-indicator-prefs__about" />
+                                            <class name="prime-indicator-prefs__about--session" />
+                                        </style>
+                                        <property name="label">unknown</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwPreferencesGroup">
+                        <child>
+                            <object class="GtkBox">
+                                <property name="orientation">vertical</property>
+                                <property name="valign">center</property>
+                                <child>
+                                    <object class="GtkLabel" id="about-author">
+                                        <style>
+                                            <class name="prime-indicator-prefs__about" />
+                                            <class name="prime-indicator-prefs__about--author" />
+                                        </style>
+                                        <property name="label">Me.metadata.author</property>
+                                        <property name="use-markup">true</property>
+                                        <property name="wrap">true</property>
+                                        <property name="justify">center</property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="GtkLabel" id="about-webpage">
+                                        <style>
+                                            <class name="prime-indicator-prefs__about" />
+                                            <class name="prime-indicator-prefs__about--webpage" />
+                                        </style>
+                                        <property name="label">Me.metadata.webpage</property>
+                                        <property name="use-markup">true</property>
+                                        <property name="wrap">true</property>
+                                        <property name="justify">center</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkBox">
+                                <property name="orientation">vertical</property>
+                                <property name="valign">end</property>
+                                <property name="vexpand">true</property>
+                                <child>
+                                    <object class="GtkLabel" id="about-license">
+                                        <style>
+                                            <class name="prime-indicator-prefs__about" />
+                                            <class name="prime-indicator-prefs__about--license" />
+                                        </style>
+                                        <property name="label">Me.metadata.license</property>
+                                        <property name="use-markup">true</property>
+                                        <property name="wrap">true</property>
+                                        <property name="justify">center</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+        <child>
+            <object class="GtkLabel">
+                <property name="visible">false</property>
+                <property name="label">
+                    The root element should be AdwPreferencesWindow, but for some reason if we use AdwPreferencesWindow
+                    element all the content of each page is empty. Another strange thing is that if we do not have this
+                    additional child (GtkLabel), about (the last page) is empty... ?!?!?!
+                </property>
+            </object>
+        </child>
+    </object>
+</interface>

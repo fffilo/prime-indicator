@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="prime-indicator">
     <schema path="/org/gnome/shell/extensions/prime-indicator/" id="org.gnome.shell.extensions.prime-indicator">
+        <key name="prefs-default-width" type="i">
+            <default>0</default>
+            <summary>Preferences window default width</summary>
+        </key>
+        <key name="prefs-default-height" type="i">
+            <default>0</default>
+            <summary>Preferences window default height</summary>
+        </key>
         <key name="auto-logout" type="b">
             <default>true</default>
             <summary>Logout on GPU switch</summary>

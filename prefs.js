@@ -14,10 +14,11 @@ var init = () => {
 }
 
 /**
- * Extension preferences build widget.
+ * Fill the preferences window (Adw.PreferencesWindow).
  *
+ * @param  {ExtensionPrefsDialog} window
  * @return {Void}
  */
-var buildPrefsWidget = () => {
-    return new Widget.Widget();
+var fillPreferencesWindow = (window) => {
+    new Widget.Widget(window);
 }
