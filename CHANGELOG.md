@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 10 - 2022-08-23
+## Version 11 - 2022-08-23
 ### Changed
 - Port extension to Gnome Shell 42
 - Preferences redesign
