@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 10 - 2022-08-23
+### Changed
+- Port extension to Gnome Shell 41
+
 ## Version 9 - 2021-11-04
 ### Changed
 - Refactor
@@ -7,6 +11,7 @@
 ## Version 8 - 2021-11-04
 ### Changed
 - Port extension to Gnome Shell 40
+### Added
 - Display _Please wait for the operation to complete_ message on GPU switch
 - Display _Logging out_ message on session logout
 
