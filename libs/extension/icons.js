@@ -15,6 +15,20 @@ const Me = imports.misc.extensionUtils.getCurrentExtension();
 var DEFAULT = 'prime-menu-default-symbolic';
 
 /**
+ * Donation icon.
+ *
+ * @type {String}
+ */
+var DONATION = 'prime-menu-donation-symbolic';
+
+/**
+ * GitHub icon.
+ *
+ * @type {String}
+ */
+var GITHUB = 'prime-menu-github-symbolic';
+
+/**
  * Get icon path (directory name). If filename argument is
  * provided it will be appended to path. Note that there
  * is no file exists check here.

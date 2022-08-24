@@ -157,6 +157,16 @@
                                 <property name="orientation">vertical</property>
                                 <property name="valign">center</property>
                                 <child>
+                                    <object class="GtkLabel" id="about-maintained-by">
+                                        <style>
+                                            <class name="prime-indicator-prefs__about" />
+                                            <class name="prime-indicator-prefs__about--maintained-by" />
+                                        </style>
+                                        <property name="label" translatable="yes">Maintained by</property>
+                                        <property name="justify">center</property>
+                                    </object>
+                                </child>
+                                <child>
                                     <object class="GtkLabel" id="about-author">
                                         <style>
                                             <class name="prime-indicator-prefs__about" />
@@ -168,20 +178,50 @@
                                         <property name="justify">center</property>
                                     </object>
                                 </child>
-                                <child>
-                                    <object class="GtkLabel" id="about-webpage">
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwPreferencesGroup">
+                        <child>
+                            <object class="AdwActionRow">
+                                <child type="prefix">
+                                    <object class="GtkLinkButton" id="about-donation">
+                                        <style>
+                                            <class name="prime-indicator-prefs__about" />
+                                            <class name="prime-indicator-prefs__about--donation" />
+                                        </style>
+                                        <property name="valign">center</property>
+                                        <property name="hexpand">true</property>
+                                        <child>
+                                            <object class="AdwButtonContent" id="about-donation-content">
+                                                <property name="label" translatable="yes">Donate</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child type="suffix">
+                                    <object class="GtkLinkButton" id="about-webpage">
                                         <style>
                                             <class name="prime-indicator-prefs__about" />
                                             <class name="prime-indicator-prefs__about--webpage" />
                                         </style>
-                                        <property name="label">Me.metadata.webpage</property>
-                                        <property name="use-markup">true</property>
-                                        <property name="wrap">true</property>
-                                        <property name="justify">center</property>
+                                        <property name="valign">center</property>
+                                        <property name="hexpand">true</property>
+                                        <child>
+                                            <object class="AdwButtonContent" id="about-webpage-content">
+                                                <property name="label" translatable="yes">Webpage</property>
+                                            </object>
+                                        </child>
                                     </object>
                                 </child>
                             </object>
                         </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="AdwPreferencesGroup">
                         <child>
                             <object class="GtkBox">
                                 <property name="orientation">vertical</property>

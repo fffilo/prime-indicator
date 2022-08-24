@@ -1,3 +1,10 @@
 .prime-indicator-prefs__about--icon { margin: 1.5em 0; }
-.prime-indicator-prefs__about--title { font-size: 1.2em; font-weight: bold; }
+.prime-indicator-prefs__about--title { margin-top: 1em; font-size: 1.25em; font-weight: bold; }
+.prime-indicator-prefs__about--maintained-by,
 .prime-indicator-prefs__about--license { font-size: 0.8em; }
+.prime-indicator-prefs__about--donation,
+.prime-indicator-prefs__about--webpage { background: #191919; color: #bebebe; }
+.prime-indicator-prefs__about--donation { margin: 0 1.5em 0 6em; }
+.prime-indicator-prefs__about--webpage { margin: 0 6em 0 1.5em; }
+.prime-indicator-prefs__about--donation:hover,
+.prime-indicator-prefs__about--webpage:hover { background: #000; }

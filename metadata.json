@@ -10,6 +10,7 @@
     "settings-schema": "org.gnome.shell.extensions.prime-indicator",
     "shell-version": ["42"],
     "url": "https://github.com/fffilo/prime-indicator",
+    "url-donation": "https://www.buymeacoffee.com/fffilo",
     "uuid": "prime-indicator@gnome-shell-exstensions.fffilo.github.com",
     "version": "11"
 }
