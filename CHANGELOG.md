@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 12 - 2022-08-24
+### Added
+- Donation button (preferences about page)
+
 ## Version 11 - 2022-08-23
 ### Changed
 - Port extension to Gnome Shell 42
