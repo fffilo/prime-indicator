@@ -161,7 +161,9 @@ var Widget = class Widget {
      * @return {Void}
      */
     _buildUIAbout() {
-        let gnomeVersion = this._getGnomeVersion(),
+        let url = this._getMetadataProperty('url'),
+            webpage = `<a href="${url}">${url}</a>`,
+            gnomeVersion = this._getGnomeVersion(),
             sessionType = this._getSessionType();
 
         this._findChild('about-icon').set_from_icon_name(Icons.DEFAULT);
@@ -171,11 +173,8 @@ var Widget = class Widget {
         this._findChild('about-gnome').set_label(gnomeVersion);
         this._findChild('about-session').set_label(sessionType);
         this._findChild('about-author').set_label(this._getMetadataProperty('original-author-html', 'original-author'));
-        this._findChild('about-donation').set_uri(this._getMetadataProperty('url-donation'));
-        this._findChild('about-donation-content').set_icon_name(Icons.DONATION);
-        this._findChild('about-webpage').set_uri(this._getMetadataProperty('url'));
-        this._findChild('about-webpage-content').set_icon_name(Icons.GITHUB);
-        this._findChild('about-webpage-content').set_label(_("GitHub"));
+        this._findChild('about-webpage').set_label(webpage);
+        this._findChild('about-donation').set_label(this._getMetadataProperty('donation-html', 'donation'));
         this._findChild('about-license').set_label(this._getMetadataProperty('license-html', 'license'));
     }
 
@@ -286,8 +285,7 @@ var Widget = class Widget {
     }
 
     /**
-     * Global status prune button click event handler:
-     * execute `vagrant global-status --prune`.
+     * NVidia settings button click event handler.
      *
      * @param  {Gtk.Button} widget
      * @return {Void}
