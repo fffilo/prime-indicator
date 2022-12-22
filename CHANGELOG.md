@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 13 - 2022-12-22
+### Changed
+- Donation button replaced with description (preferences about page)
+- Minor refactor
+
 ## Version 12 - 2022-08-24
 ### Added
 - Donation button (preferences about page)
