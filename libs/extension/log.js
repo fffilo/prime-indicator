@@ -1,9 +1,9 @@
 /* -*- mode: js2; js2-basic-offset: 4; indent-tabs-mode: nil -*- */
 
-// strict mode
+// Strict mode.
 'use strict';
 
-// import modules
+// Import modules.
 const {Gio, GLib} = imports.gi;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 
