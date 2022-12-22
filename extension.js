@@ -6,46 +6,76 @@
 // Import modules.
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
-const Menu = Me.imports.libs.extension.menu;
 
 /**
- * Global widget object.
+ * The extension.js is a required file of every extension. It is the core
+ * of your extension and contains the function hooks init(), enable() and
+ * disable() used by GNOME Shell to load, enable and disable your
+ * extension.
  *
- * @type {Object}
+ * https://gjs.guide/extensions/overview/anatomy.html#extension-js-required
  */
-let widget = null;
+class Extension {
+    /**
+     * Constructor.
+     *
+     * @return {Void}
+     */
+    constructor() {
+        this._widget = null;
+    }
+
+    /**
+     * This function is called when your extension is enabled, which could
+     * be done in GNOME Extensions, when you log in or when the screen is
+     * unlocked.
+     *
+     * This is when you should setup any UI for your extension, change
+     * existing widgets, connect signals or modify GNOME Shell's
+     * behaviour.
+     *
+     * @return {Void}
+     */
+    enable() {
+        if (this._widget)
+            return;
+
+        const Menu = Me.imports.libs.extension.menu;
+        this._widget = new Menu.Widget();
+    }
+
+    /**
+     * This function is called when your extension is uninstalled, disabled in
+     * GNOME Extensions, when you log out or when the screen locks.
+     *
+     * Anything you created, modifed or setup in enable() MUST be undone here.
+     * Not doing so is the most common reason extensions are rejected in
+     * review!
+     *
+     * @return {Void}
+     */
+    disable() {
+        if (!this._widget)
+            return;
+
+        this._widget.destroy();
+        this._widget = null;
+    }
+};
 
 /**
- * Extension initialization.
+ * This function is called once when your extension is loaded, not enabled.
+ * This is a good time to setup translations or anything else you only do
+ * once.
  *
- * @param  {Object} extensionMeta
- * @return {Void}
+ * You MUST NOT make any changes to GNOME Shell, connect any signals or
+ * add any MainLoop sources here.
+ *
+ * @param  {Object}    meta
+ * @return {Extension}
  */
-var init = (extensionMeta) => {
+function init(meta) {
     ExtensionUtils.initTranslations(Me.metadata['gettext-domain']);
-}
 
-/**
- * Extension enable.
- *
- * @return {Void}
- */
-var enable = () => {
-    if (widget)
-        return;
-
-    widget = new Menu.Widget();
-}
-
-/**
- * Extension disable.
- *
- * @return {Void}
- */
-var disable = () => {
-    if (!widget)
-        return;
-
-    widget.destroy();
-    widget = null;
-}
+    return new Extension();
+};
